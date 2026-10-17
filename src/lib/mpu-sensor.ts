@@ -1,6 +1,7 @@
 import { usbBlockReason, usbHeartRateSupported, usbPortLabel } from "@/lib/heart-sensor";
 
 export const WIRED_MPU_BAUD = 115200;
+export const BLUETOOTH_MPU_BAUD = 9600;
 
 export type SerialMpuSample = {
   angle?: number;
@@ -59,6 +60,7 @@ export type MpuConnection = {
 
 type ConnectOptions = {
   port?: SerialPort;
+  baudRate?: number;
   onAngle: (angle: number) => void;
   onLine?: (line: string) => void;
   onDisconnect: () => void;
@@ -67,7 +69,7 @@ type ConnectOptions = {
 export async function connectWiredMpu(options: ConnectOptions): Promise<MpuConnection> {
   const port = options.port ?? (await requestUsbMpuPort());
   try {
-    await port.open({ baudRate: WIRED_MPU_BAUD });
+    await port.open({ baudRate: options.baudRate ?? WIRED_MPU_BAUD });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     const name = error instanceof DOMException ? error.name : "";

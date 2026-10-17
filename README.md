@@ -41,6 +41,15 @@ Signed-in patients can open **Photo Goniometer** from Dashboard, Charts (Photo t
 
 The estimate is for progress tracking, not a diagnosis. Video files are not stored in the browser database.
 
+## MPU-6050 over HC-05
+
+The motion chip stays on the Elegoo Uno. An HC-05 sends the same angle lines over Bluetooth.
+
+1. MPU VCC stays on Uno 3.3V if that is where it is now. GND → GND. SDA → A4. SCL → A5.
+2. HC-05 VCC → Uno 5V. GND → GND. TXD → pin 2. RXD → pin 3. Leave EN, STATE, and KEY empty.
+3. Unplug the HC-05 TXD and RXD wires. Board: Arduino Uno. Upload `bluetooth-mpu.ino` from the Motion page. Plug those two wires back in. Close Serial Monitor.
+4. Pair the HC-05 with the computer. PIN `1234`. On the Motion page tap **Connect HC-05** and pick the port named HC-05, not Bluetooth-Incoming-Port.
+
 ## MPU-6050 (Elegoo Uno R3)
 
 1. VCC → Uno 5V. If the pin is labeled only 3.3V, use Uno 3.3V. GND → GND. SCL → A5. SDA → A4. Leave INT empty.

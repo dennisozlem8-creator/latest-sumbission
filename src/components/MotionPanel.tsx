@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  BLUETOOTH_MPU_BAUD,
   connectWiredMpu,
   mpuUsbHelp,
   mpuUsbSupported,
@@ -41,11 +42,12 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
     };
   }, []);
 
-  async function connectUsb() {
+  async function connectUsb(baudRate = 115200) {
     if (!usbOk) {
       setError(mpuUsbHelp());
       return;
     }
+    const bluetooth = baudRate === BLUETOOTH_MPU_BAUD;
     setConnecting(true);
     setError("");
     setSerialLog([]);
@@ -54,6 +56,7 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
       const port = await requestUsbMpuPort();
       const connection = await connectWiredMpu({
         port,
+        baudRate,
         onAngle: (next) => {
           setAngle(next);
           setI2cOk(true);
@@ -69,7 +72,7 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
             const raw = sample.error.replace(/^ERR\s+/i, "");
             setError(
               /no I2C/i.test(raw)
-                ? "USB yes — no I2C. Check VCC power (5V vs 3.3V), GND, then swap SCL and SDA and re-upload wired-mpu.ino."
+                ? "The motion chip did not answer. Check MPU power, GND, then SCL and SDA."
                 : raw
             );
           }
@@ -87,7 +90,11 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
     } catch (err) {
       const name = err instanceof DOMException ? err.name : "";
       if (name === "NotFoundError" || name === "AbortError") {
-        setError("No USB device was chosen. Plug in the Elegoo, close Serial Monitor, tap Connect with USB, then pick Arduino Uno.");
+        setError(
+          bluetooth
+            ? "No port was chosen. Pair the HC-05 first, then pick the port named HC-05. Not Bluetooth-Incoming-Port."
+            : "No USB device was chosen. Plug in the Elegoo, close Serial Monitor, tap Connect with USB, then pick Arduino Uno."
+        );
       } else {
         setError(err instanceof Error ? err.message : "Could not open USB.");
       }
@@ -174,14 +181,24 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
 
       <div className={`mt-4 flex flex-col gap-2 ${compact ? "" : "sm:flex-row"}`}>
         {!ready ? (
-          <button
-            type="button"
-            className="rm-btn rm-btn-brand w-full disabled:opacity-40 sm:w-auto sm:px-8"
-            disabled={connecting || !usbOk}
-            onClick={() => void connectUsb()}
-          >
-            {connecting ? "Connecting…" : "Connect with USB"}
-          </button>
+          <>
+            <button
+              type="button"
+              className="rm-btn rm-btn-brand w-full disabled:opacity-40 sm:w-auto sm:px-8"
+              disabled={connecting || !usbOk}
+              onClick={() => void connectUsb()}
+            >
+              {connecting ? "Connecting…" : "Connect with USB"}
+            </button>
+            <button
+              type="button"
+              className="rm-btn rm-btn-ghost w-full disabled:opacity-40 sm:w-auto sm:px-8"
+              disabled={connecting || !usbOk}
+              onClick={() => void connectUsb(BLUETOOTH_MPU_BAUD)}
+            >
+              {connecting ? "Connecting…" : "Connect HC-05"}
+            </button>
+          </>
         ) : (
           <button type="button" className="rm-btn rm-btn-ghost w-full sm:w-auto sm:px-8" onClick={disconnect}>
             Disconnect

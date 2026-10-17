@@ -97,6 +97,25 @@ export default function MotionSensorPage() {
         </a>
       </DashCard>
 
+      <DashCard className="mt-4 p-5">
+        <h2 className="rm-serif text-xl font-semibold text-[#1b3348]">HC-05 Bluetooth</h2>
+        <p className="mt-2 text-sm leading-6 text-[#2f4a60]">
+          The MPU stays on the Uno. The HC-05 sends the angle to the computer. Leave the MPU power wire where it is.
+        </p>
+        <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-body">
+          <li>MPU VCC stays on Uno 3.3V. GND → GND. SDA → A4. SCL → A5.</li>
+          <li>HC-05 VCC → Uno 5V. HC-05 GND → GND.</li>
+          <li>HC-05 TXD → Uno pin 2. HC-05 RXD → Uno pin 3.</li>
+          <li>Leave EN, STATE, and KEY empty.</li>
+        </ol>
+        <p className="mt-3 text-sm leading-6 text-[#2f4a60]">
+          Unplug the TXD and RXD wires, upload bluetooth-mpu.ino with the board set to Arduino Uno, then plug those two wires back in. Pair the HC-05. The PIN is 1234. Then tap Connect HC-05 and pick the port named HC-05.
+        </p>
+        <a href="/firmware/bluetooth-mpu" className="rm-btn rm-btn-ghost mt-4 inline-flex w-full justify-center">
+          Download bluetooth-mpu.ino
+        </a>
+      </DashCard>
+
       <HelpBlock title="Load the program, then connect">
         <ol className="list-decimal space-y-2 pl-5">
           <li>
