@@ -46,8 +46,8 @@ The estimate is for progress tracking, not a diagnosis. Video files are not stor
 The motion chip stays on the Elegoo Uno. An HC-05 sends the same angle lines over Bluetooth.
 
 1. MPU VCC stays on Uno 3.3V if that is where it is now. GND → GND. SDA → A4. SCL → A5.
-2. HC-05 VCC → Uno 5V. GND → GND. TXD → pin 2. RXD → pin 3. Leave EN, STATE, and KEY empty.
-3. Unplug the HC-05 TXD and RXD wires. Board: Arduino Uno. Upload `bluetooth-mpu.ino` from the Motion page. Plug those two wires back in. Close Serial Monitor.
+2. HC-05 VCC → Uno 5V. GND → GND. TXD → pin 0 (RX). RXD → pin 1 (TX). Leave EN, STATE, and KEY empty. Do not use pins 2 and 3.
+3. Unplug the wires on pins 0 and 1. Board: Arduino Uno. Upload `bluetooth-mpu.ino` from the Motion page. Plug those two wires back in. Close Serial Monitor. Power the Uno from a phone charger.
 4. Pair the HC-05 with the computer. PIN `1234`. On the Motion page tap **Connect HC-05** and pick the port named HC-05, not Bluetooth-Incoming-Port.
 
 ## MPU-6050 (Elegoo Uno R3)

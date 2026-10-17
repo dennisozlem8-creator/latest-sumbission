@@ -28,6 +28,7 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
   const [deviceName, setDeviceName] = useState("");
   const [serialLog, setSerialLog] = useState<string[]>([]);
   const [i2cOk, setI2cOk] = useState(false);
+  const [usingBluetooth, setUsingBluetooth] = useState(false);
   const connectionRef = useRef<MpuConnection | null>(null);
   const onAngleRef = useRef(onAngle);
   const onConnectedRef = useRef(onConnected);
@@ -49,6 +50,7 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
     }
     const bluetooth = baudRate === BLUETOOTH_MPU_BAUD;
     setConnecting(true);
+    setUsingBluetooth(bluetooth);
     setError("");
     setSerialLog([]);
     setI2cOk(false);
@@ -72,7 +74,9 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
             const raw = sample.error.replace(/^ERR\s+/i, "");
             setError(
               /no I2C/i.test(raw)
-                ? "The motion chip did not answer. Check MPU power, GND, then SCL and SDA."
+                ? bluetooth
+                  ? "The motion chip did not answer over Bluetooth. MPU VCC stays on 3.3V, GND on GND, SDA on A4, SCL on A5. HC-05 TXD goes to pin 0 and RXD to pin 1. Upload bluetooth-mpu.ino again."
+                  : "The motion chip did not answer. Check MPU power, GND, then SCL and SDA."
                 : raw
             );
           }
@@ -88,6 +92,7 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
       setReady(true);
       onConnectedRef.current?.();
     } catch (err) {
+      setUsingBluetooth(false);
       const name = err instanceof DOMException ? err.name : "";
       if (name === "NotFoundError" || name === "AbortError") {
         setError(
@@ -110,6 +115,7 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
     setAngle(0);
     setSerialLog([]);
     setI2cOk(false);
+    setUsingBluetooth(false);
     setError("");
   }
 
@@ -126,11 +132,17 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-foreground">
             {connecting
-              ? "Opening the USB motion sensor"
+              ? usingBluetooth
+                ? "Opening the HC-05 motion sensor"
+                : "Opening the USB motion sensor"
               : ready
                 ? i2cOk || angle > 0
-                  ? "USB motion sensor — live angle"
-                  : "USB motion sensor connected — waiting for the angle"
+                  ? usingBluetooth
+                    ? "Bluetooth motion sensor — live angle"
+                    : "USB motion sensor — live angle"
+                  : usingBluetooth
+                    ? "HC-05 connected — waiting for the angle"
+                    : "USB motion sensor connected — waiting for the angle"
                 : "USB motion sensor"}
           </p>
           <p className="mt-1 text-sm text-muted">
@@ -149,11 +161,17 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
           <p className="text-xs font-bold uppercase tracking-wide text-muted">Motion signal</p>
           <p className="mt-1 font-semibold text-foreground">
             {i2cOk || angle > 0
-              ? "USB yes — move the joint and watch ANGLE"
-              : "USB yes — waiting for I2C OK. If the log says SCAN none, the chip has no power or SCL/SDA are swapped."}
+              ? usingBluetooth
+                ? "Bluetooth yes — move the joint and watch ANGLE"
+                : "USB yes — move the joint and watch ANGLE"
+              : usingBluetooth
+                ? "Bluetooth yes — waiting for I2C OK. The Uno must be running bluetooth-mpu.ino, with HC-05 TXD on pin 0 and RXD on pin 1."
+                : "USB yes — waiting for I2C OK. If the log says SCAN none, the chip has no power or SCL/SDA are swapped."}
           </p>
           <p className="mt-1 text-sm text-body">
-            Tape the MPU-6050 on one bone of the joint. Keep USB plugged into the computer. The number is tilt, not a diagnosis.
+            {usingBluetooth
+              ? "Tape the MPU-6050 on one bone of the joint. Power the Uno from a phone charger. The number is tilt, not a diagnosis."
+              : "Tape the MPU-6050 on one bone of the joint. Keep USB plugged into the computer. The number is tilt, not a diagnosis."}
           </p>
         </div>
       )}

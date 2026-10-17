@@ -1,25 +1,10 @@
 // Revive Motion — Elegoo Uno R3 + MPU-6050 + HC-05 Bluetooth
-// File → New. Delete everything. Paste this whole file once.
-// MPU: VCC -> Uno 3.3V if that is where it is now. GND -> GND. SDA -> A4. SCL -> A5.
-// HC-05: VCC -> Uno 5V. GND -> GND. TXD -> pin 2. RXD -> pin 3.
-// Leave EN, STATE, KEY, INT, and AD0 empty.
-// Tools → Board → Arduino Uno. Unplug the HC-05 TXD and RXD wires, Upload, then plug them back.
-// Close Serial Monitor.
-
-#include <SoftwareSerial.h>
-
-SoftwareSerial bt(2, 3); // Uno pin 2 listens to HC-05 TXD. Uno pin 3 talks to HC-05 RXD.
-
-class LinkPrint : public Print {
- public:
-  size_t write(uint8_t c) override {
-    Serial.write(c);
-    bt.write(c);
-    return 1;
-  }
-};
-
-LinkPrint link;
+// File → Open this file. Do not paste it into an old sketch.
+// MPU: VCC -> Uno 3.3V. GND -> GND. SDA -> A4. SCL -> A5.
+// HC-05: VCC -> Uno 5V. GND -> GND. TXD -> pin 0 (RX). RXD -> pin 1 (TX).
+// Leave EN, STATE, KEY, INT, and AD0 empty. Do not use pins 2 or 3.
+// Tools → Board → Arduino Uno. Unplug the wires on pins 0 and 1, Upload, then plug them back.
+// Close Serial Monitor. Unplug the Uno from the Mac and power it from a phone charger.
 
 #include <Wire.h>
 
@@ -36,9 +21,9 @@ unsigned long lastScanMs = 0;
 unsigned long lastHelloMs = 0;
 
 void printHello() {
-  link.println("HELLO MPU6050 ELEGOO_UNO_R3");
-  link.println("SRC ELEGOO_UNO_R3");
-  link.println("CHIP MPU6050");
+  Serial.println("HELLO MPU6050 ELEGOO_UNO_R3");
+  Serial.println("SRC ELEGOO_UNO_R3");
+  Serial.println("CHIP MPU6050");
 }
 
 void i2cDelay() {
@@ -135,7 +120,7 @@ uint8_t softReadByte(bool ack) {
 }
 
 void recoverBus() {
-  link.println("BUS RECOVER");
+  Serial.println("BUS RECOVER");
   Wire.end();
   pinMode(PIN_SDA, INPUT_PULLUP);
   pinMode(PIN_SCL, OUTPUT);
@@ -234,17 +219,17 @@ uint8_t readReg(uint8_t a, uint8_t reg) {
 }
 
 void printScan() {
-  link.print("SCAN");
+  Serial.print("SCAN");
   bool any = false;
   for (uint8_t i = 0; i < 2; i++) {
     if (ping(ADDRS[i])) {
-      link.print(" 0x");
-      link.print(ADDRS[i], HEX);
+      Serial.print(" 0x");
+      Serial.print(ADDRS[i], HEX);
       any = true;
     }
   }
-  if (!any) link.print(" none");
-  link.println();
+  if (!any) Serial.print(" none");
+  Serial.println();
 }
 
 bool findSensor() {
@@ -266,11 +251,11 @@ bool wake(uint8_t a) {
 bool configureFoundSensor() {
   wake(addr);
   const uint8_t who = readReg(addr, 0x75);
-  link.print("WHO ");
-  link.println(who);
-  link.print("ADDR 0x");
-  link.println(addr, HEX);
-  link.println("I2C OK");
+  Serial.print("WHO ");
+  Serial.println(who);
+  Serial.print("ADDR 0x");
+  Serial.println(addr, HEX);
+  Serial.println("I2C OK");
   return true;
 }
 
@@ -284,37 +269,37 @@ bool startSensor() {
     for (uint8_t s = 0; s < 3; s++) {
       beginWire(speeds[s], pullModes[p]);
       delay(30);
-      link.print("I2C MODE pullup=");
-      link.print(pullModes[p] ? "on" : "off");
-      link.print(" hz=");
-      link.println(speeds[s]);
+      Serial.print("I2C MODE pullup=");
+      Serial.print(pullModes[p] ? "on" : "off");
+      Serial.print(" hz=");
+      Serial.println(speeds[s]);
       printScan();
       if (!findSensor()) continue;
-      link.println("I2C PINS SDA=A4 SCL=A5");
+      Serial.println("I2C PINS SDA=A4 SCL=A5");
       return configureFoundSensor();
     }
   }
 
-  link.println("I2C SWAP try SDA=A5 SCL=A4");
+  Serial.println("I2C SWAP try SDA=A5 SCL=A4");
   beginSoft(PIN_SCL, PIN_SDA);
   delay(30);
   printScan();
   if (findSensor()) {
-    link.println("I2C PINS SDA=A5 SCL=A4");
+    Serial.println("I2C PINS SDA=A5 SCL=A4");
     return configureFoundSensor();
   }
 
-  link.println("I2C SWAP try SDA=A4 SCL=A5 soft");
+  Serial.println("I2C SWAP try SDA=A4 SCL=A5 soft");
   beginSoft(PIN_SDA, PIN_SCL);
   delay(30);
   printScan();
   if (findSensor()) {
-    link.println("I2C PINS SDA=A4 SCL=A5");
+    Serial.println("I2C PINS SDA=A4 SCL=A5");
     return configureFoundSensor();
   }
 
   beginWire(100000UL, true);
-  link.println("ERR no I2C. Check VCC power, GND, then swap SCL and SDA.");
+  Serial.println("ERR no I2C. Check VCC power, GND, then swap SCL and SDA.");
   return false;
 }
 
@@ -355,8 +340,7 @@ bool readAccel(int16_t *ax, int16_t *ay, int16_t *az) {
 }
 
 void setup() {
-  Serial.begin(115200);
-  bt.begin(9600);
+  Serial.begin(9600);
   delay(800);
   printHello();
   i2cReady = startSensor();
@@ -367,11 +351,10 @@ void setup() {
 void loop() {
   const unsigned long now = millis();
 
-  if (Serial.available() || bt.available()) {
+  if (Serial.available()) {
     while (Serial.available()) Serial.read();
-    while (bt.available()) bt.read();
     printHello();
-    link.println(i2cReady ? "PONG MPU6050" : "PONG NONE");
+    Serial.println(i2cReady ? "PONG MPU6050" : "PONG NONE");
   }
 
   if (!i2cReady && now - lastHelloMs > 4000) {
@@ -382,7 +365,7 @@ void loop() {
   if (!i2cReady) {
     if (now - lastScanMs > 3000) {
       lastScanMs = now;
-      link.println("RETRY I2C");
+      Serial.println("RETRY I2C");
       i2cReady = startSensor();
     }
     delay(20);
@@ -391,7 +374,7 @@ void loop() {
 
   int16_t ax = 0, ay = 0, az = 0;
   if (!readAccel(&ax, &ay, &az)) {
-    link.println("ERR I2C dropped. Recovering.");
+    Serial.println("ERR I2C dropped. Recovering.");
     i2cReady = false;
     lastScanMs = 0;
     delay(40);
@@ -405,8 +388,8 @@ void loop() {
   if (angle < 0) angle = 0;
   if (angle > 180) angle = 180;
 
-  link.print("ANGLE ");
-  link.println(angle);
+  Serial.print("ANGLE ");
+  Serial.println(angle);
 
   delay(50);
 }
