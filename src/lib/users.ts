@@ -20,6 +20,13 @@ export function isCareTeam(role?: UserRole | null) {
   return role === "doctor" || role === "caregiver";
 }
 
+export function careTeamEmails(user?: { doctorEmail?: string; caregiverEmail?: string } | null) {
+  const emails = [user?.doctorEmail, user?.caregiverEmail]
+    .map((email) => email?.trim().toLowerCase())
+    .filter((email): email is string => Boolean(email));
+  return [...new Set(emails)];
+}
+
 export type ExerciseRecord = {
   areaId: string;
   exerciseIds: string[];
@@ -35,6 +42,7 @@ export type User = {
   password: string;
   role: UserRole;
   doctorEmail?: string;
+  caregiverEmail?: string;
   notificationsEnabled: boolean;
   exerciseHistory: ExerciseRecord[];
   questProgress: Record<string, boolean>;
@@ -83,6 +91,7 @@ export function loadUsers(): User[] {
       password: u.password ?? "",
       role: u.role ?? "patient",
       doctorEmail: u.doctorEmail,
+      caregiverEmail: u.caregiverEmail,
       notificationsEnabled: u.notificationsEnabled ?? true,
       exerciseHistory: u.exerciseHistory ?? [],
       questProgress: u.questProgress ?? {},

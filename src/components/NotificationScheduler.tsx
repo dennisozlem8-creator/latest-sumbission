@@ -6,6 +6,7 @@ import {
   requestNotificationPermission,
   sendDailyNotifications,
 } from "@/lib/notifications";
+import { careTeamEmails } from "@/lib/users";
 
 export function NotificationScheduler() {
   const { user } = useAuth();
@@ -15,10 +16,10 @@ export function NotificationScheduler() {
 
     requestNotificationPermission();
 
-    sendDailyNotifications(user.email, user.name, user.doctorEmail);
+    sendDailyNotifications(user.email, user.name, careTeamEmails(user));
 
     const interval = setInterval(() => {
-      sendDailyNotifications(user.email, user.name, user.doctorEmail);
+      sendDailyNotifications(user.email, user.name, careTeamEmails(user));
     }, 60 * 60 * 1000);
 
     return () => clearInterval(interval);

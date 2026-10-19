@@ -13,6 +13,8 @@ import { recoveryPassport } from "@/lib/recovery-passport";
 import { RecoveryPassportCard } from "@/components/RecoveryPassportCard";
 import { isCareTeam } from "@/lib/users";
 import { clinicLocale, t } from "@/lib/i18n";
+import { WeeklyUpdateCard } from "@/components/WeeklyUpdateCard";
+import { weeklyPatientUpdate } from "@/lib/weekly-update";
 
 function PatientMovementView() {
   const { user, getPatientsForDoctor } = useAuth();
@@ -63,6 +65,10 @@ function PatientMovementView() {
         <DashStat label="Latest peak" value={rows.length ? `${rows[rows.length - 1].angle}°` : "—"} />
         <DashStat label={t("passportScoreLabel", locale)} value={passport.score != null ? passport.score : "—"} />
       </div>
+
+      <DashCard className="mt-6">
+        <WeeklyUpdateCard update={weeklyPatientUpdate(patient, rows, new Date(), locale)} />
+      </DashCard>
 
       <div className="mt-6">
         <RecoveryPassportCard passport={passport} locale={locale} />

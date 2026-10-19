@@ -22,6 +22,7 @@ type RegisterOptions = {
   password: string;
   role: UserRole;
   doctorEmail?: string;
+  caregiverEmail?: string;
   notificationsEnabled?: boolean;
 };
 
@@ -30,7 +31,7 @@ type AuthContextValue = {
   loading: boolean;
   login: (email: string, password: string) => string | null;
   register: (options: RegisterOptions) => string | null;
-  enterDemo: (role?: "patient" | "doctor") => void;
+  enterDemo: (role?: "patient" | "doctor" | "caregiver") => void;
   logout: () => void;
   saveExerciseHistory: (
     areaId: string,
@@ -56,6 +57,7 @@ function normalizeUser(raw: Partial<User> & Pick<User, "email" | "password" | "n
     password: raw.password,
     role: raw.role ?? "patient",
     doctorEmail: raw.doctorEmail,
+    caregiverEmail: raw.caregiverEmail,
     notificationsEnabled: raw.notificationsEnabled ?? true,
     exerciseHistory: raw.exerciseHistory ?? [],
     questProgress: raw.questProgress ?? {},
@@ -136,6 +138,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options.role === "patient" && options.doctorEmail?.includes("@")
           ? options.doctorEmail.trim().toLowerCase()
           : undefined,
+      caregiverEmail:
+        options.role === "patient" && options.caregiverEmail?.includes("@")
+          ? options.caregiverEmail.trim().toLowerCase()
+          : undefined,
       notificationsEnabled: options.notificationsEnabled ?? true,
       exerciseHistory: [],
       questProgress: {},
@@ -150,9 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
-  const enterDemo = useCallback((role: "patient" | "doctor" = "patient") => {
-    const { patient, clinician } = seedDemoAccounts(loadDeviceLocale());
-    const next = role === "doctor" ? clinician : patient;
+  const enterDemo = useCallback((role: "patient" | "doctor" | "caregiver" = "patient") => {
+    const { patient, clinician, caregiver } = seedDemoAccounts(loadDeviceLocale());
+    const next = role === "doctor" ? clinician : role === "caregiver" ? caregiver : patient;
     localStorage.setItem(SESSION_KEY, next.email);
     setUser(normalizeUser(next));
   }, []);
@@ -215,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getPatientsForDoctor = useCallback(() => {
     if (!user || !isCareTeam(user.role)) return [];
     return loadUsers().filter(
-      (u) => u.role === "patient" && u.doctorEmail === user.email
+      (u) => u.role === "patient" && (u.doctorEmail === user.email || u.caregiverEmail === user.email)
     );
   }, [user]);
 

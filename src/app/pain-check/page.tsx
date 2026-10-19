@@ -3,6 +3,7 @@
 import { DashCard, DashIntro, DashPainMeter, DashShell } from "@/components/clinic/DashKit";
 import { useAuth } from "@/components/AuthProvider";
 import { addNotification } from "@/lib/notifications";
+import { careTeamEmails } from "@/lib/users";
 import { t } from "@/lib/i18n";
 
 export default function PainCheckPage() {
@@ -17,9 +18,9 @@ export default function PainCheckPage() {
     updateUser({ painToday: level });
 
     if (level >= 7) {
-      if (user.doctorEmail) {
+      for (const email of careTeamEmails(user)) {
         addNotification({
-          toEmail: user.doctorEmail,
+          toEmail: email,
           role: "doctor",
           title: "High pain alert",
           message: `${user.name} reported pain level ${level}/10. Session blocked.`,

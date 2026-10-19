@@ -77,7 +77,7 @@ export function requestNotificationPermission() {
 export function sendDailyNotifications(
   patientEmail: string,
   patientName: string,
-  doctorEmail?: string
+  careEmails?: string | string[]
 ) {
   if (!shouldSendDailyReminder()) return;
 
@@ -93,14 +93,32 @@ export function sendDailyNotifications(
     `Hi ${patientName.split(" ")[0]}, time for your exercises today!`
   );
 
-  if (doctorEmail) {
+  const recipients = (Array.isArray(careEmails) ? careEmails : careEmails ? [careEmails] : []).filter(Boolean);
+  for (const doctorEmail of recipients) {
     addNotification({
       toEmail: doctorEmail,
       role: "doctor",
       title: "Patient check-in",
-      message: `${patientName} has a daily exercise reminder. Review their progress in your dashboard.`,
+      message: `${patientName} has a daily exercise reminder. Review their weekly update in your dashboard.`,
     });
   }
 
   markDailyReminderSent();
+}
+
+/** One notice per care-team account per week, so the dashboard does not pile up duplicates. */
+export function ensureWeeklyUpdateNotice(toEmail: string, weekId: string, message: string) {
+  const id = `weekly-${weekId}-${toEmail.toLowerCase()}`;
+  const all = loadNotifications();
+  if (all.some((note) => note.id === id)) return;
+  all.unshift({
+    id,
+    toEmail,
+    role: "doctor",
+    title: "Weekly patient update",
+    message,
+    sentAt: new Date().toISOString(),
+    read: false,
+  });
+  saveNotifications(all.slice(0, 100));
 }

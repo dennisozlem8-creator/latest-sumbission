@@ -15,7 +15,7 @@ const patientTabs = [
 
 const doctorTabs = [
   { href: "/doctor", key: "home" as const, icon: HomeIcon },
-  { href: "/charts", key: "charts" as const, icon: ChartIcon },
+  { href: "/doctor/weekly", key: "week" as const, icon: ChartIcon },
   { href: "/pt-update", key: "care" as const, icon: CareIcon },
   { href: "/recover-ai", key: "ai" as const, icon: CoachIcon },
 ];
@@ -68,7 +68,7 @@ export function BottomNav() {
     >
       <div className="mx-auto flex w-full max-w-lg items-stretch justify-between gap-1 px-1.5 py-1.5">
         {tabs.map((tab) => {
-          const active = pathname === tab.href;
+          const active = tab.href === "/doctor" ? pathname === "/doctor" : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           const Icon = tab.icon;
           return (
             <Link

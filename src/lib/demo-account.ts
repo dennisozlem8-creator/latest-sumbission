@@ -7,10 +7,11 @@ import { loadUsers, saveUsers, type User } from "./users";
 
 export const DEMO_PATIENT_EMAIL = "demo@revivemotion.ai";
 export const DEMO_CLINIC_EMAIL = "clinic@revivemotion.ai";
+export const DEMO_CAREGIVER_EMAIL = "care@revivemotion.ai";
 export const DEMO_PASSWORD = "demo123";
 
 export function isDemoEmail(email?: string | null) {
-  return email === DEMO_PATIENT_EMAIL || email === DEMO_CLINIC_EMAIL;
+  return email === DEMO_PATIENT_EMAIL || email === DEMO_CLINIC_EMAIL || email === DEMO_CAREGIVER_EMAIL;
 }
 
 function daysAgo(days: number, hour = 10) {
@@ -40,8 +41,25 @@ function demoPatient(locale: Locale): User {
     password: DEMO_PASSWORD,
     role: "patient",
     doctorEmail: DEMO_CLINIC_EMAIL,
+    caregiverEmail: DEMO_CAREGIVER_EMAIL,
     notificationsEnabled: false,
     exerciseHistory: [
+      {
+        areaId: "knee",
+        exerciseIds: ["heel-slides"],
+        completedAt: daysAgo(11, 11),
+        reps: 8,
+        angle: 70,
+        pain: 5,
+      },
+      {
+        areaId: "knee",
+        exerciseIds: ["heel-slides"],
+        completedAt: daysAgo(8, 11),
+        reps: 10,
+        angle: 76,
+        pain: 4,
+      },
       {
         areaId: "knee",
         exerciseIds: ["heel-slides", "quad-sets"],
@@ -69,7 +87,7 @@ function demoPatient(locale: Locale): User {
     ],
     questProgress: { "heel-slides": true },
     xp: 50,
-    activityDates: [daysAgo(4), daysAgo(3), daysAgo(2), daysAgo(1), daysAgo(0)].map((iso) => iso.split("T")[0]),
+    activityDates: [daysAgo(11), daysAgo(9), daysAgo(8), daysAgo(4), daysAgo(3), daysAgo(2), daysAgo(1), daysAgo(0)].map((iso) => iso.split("T")[0]),
     setupComplete: true,
     pin: "",
     injuryType: "knee",
@@ -104,6 +122,28 @@ function demoPatient(locale: Locale): User {
   };
 }
 
+function demoCaregiver(locale: Locale): User {
+  return {
+    name: "Alex Rivera",
+    email: DEMO_CAREGIVER_EMAIL,
+    password: DEMO_PASSWORD,
+    role: "caregiver",
+    notificationsEnabled: false,
+    exerciseHistory: [],
+    questProgress: {},
+    xp: 0,
+    activityDates: [],
+    setupComplete: true,
+    pin: "",
+    injuryType: "other",
+    baselineRom: 0,
+    targetRom: 90,
+    sessionDays: 5,
+    sessionTime: "morning",
+    language: locale,
+  };
+}
+
 function demoClinician(locale: Locale): User {
   return {
     name: "Sam Ortiz, DPT",
@@ -129,6 +169,41 @@ function demoClinician(locale: Locale): User {
 function demoClips(): GoniometerMeasurement[] {
   const email = DEMO_PATIENT_EMAIL;
   return [
+    {
+      id: "demo-photo-11",
+      userEmail: email,
+      date: daysAgo(11),
+      exercise: "Heel Slide",
+      joint: "Knee (Right)",
+      angle: 70,
+      note: "Prior week, first clip.",
+      source: "photo",
+      formScore: 70,
+    },
+    {
+      id: "demo-photo-9",
+      userEmail: email,
+      date: daysAgo(9),
+      exercise: "Heel Slide",
+      joint: "Knee (Right)",
+      angle: 74,
+      note: "Prior week.",
+      source: "photo",
+      formScore: 74,
+    },
+    {
+      id: "demo-photo-8",
+      userEmail: email,
+      date: daysAgo(8),
+      exercise: "Heel Slide",
+      joint: "Knee (Right)",
+      angle: 76,
+      note: "Prior week video.",
+      source: "video",
+      formScore: 76,
+      minAngle: 40,
+      range: 36,
+    },
     {
       id: "demo-photo-4",
       userEmail: email,
@@ -221,12 +296,13 @@ function demoMuscle(): MyoWareRecording[] {
   ];
 }
 
-export function seedDemoAccounts(locale: Locale = loadDeviceLocale()): { patient: User; clinician: User } {
+export function seedDemoAccounts(locale: Locale = loadDeviceLocale()): { patient: User; clinician: User; caregiver: User } {
   const patient = demoPatient(locale);
   const clinician = demoClinician(locale);
+  const caregiver = demoCaregiver(locale);
   const others = loadUsers().filter((user) => !isDemoEmail(user.email));
-  saveUsers([...others, clinician, patient]);
+  saveUsers([...others, clinician, caregiver, patient]);
   replaceKeyedRows(GONIOMETER_KEY, [DEMO_PATIENT_EMAIL], demoClips());
   replaceKeyedRows(MYOWARE_LOG_KEY, [DEMO_PATIENT_EMAIL], demoMuscle());
-  return { patient, clinician };
+  return { patient, clinician, caregiver };
 }

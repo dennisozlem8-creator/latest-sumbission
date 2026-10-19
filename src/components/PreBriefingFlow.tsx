@@ -12,6 +12,7 @@ import {
 } from "@/lib/pre-briefing-questions";
 import { todayDateString } from "@/lib/streak";
 import { addNotification } from "@/lib/notifications";
+import { careTeamEmails } from "@/lib/users";
 import { clinicLocale, t, tf } from "@/lib/i18n";
 
 export function PreBriefingFlow() {
@@ -38,13 +39,15 @@ export function PreBriefingFlow() {
       painToday: undefined,
     });
 
-    if (user.doctorEmail && (finalAnswers.swelling === "Noticeable" || finalAnswers.yesterday === "No / rest day")) {
-      addNotification({
-        toEmail: user.doctorEmail,
-        role: "doctor",
-        title: "Daily check-in note",
-        message: `${user.name}: ${summary}. Review before session.`,
-      });
+    if (finalAnswers.swelling === "Noticeable" || finalAnswers.yesterday === "No / rest day") {
+      for (const email of careTeamEmails(user)) {
+        addNotification({
+          toEmail: email,
+          role: "doctor",
+          title: "Daily check-in note",
+          message: `${user.name}: ${summary}. Review the weekly update before the session.`,
+        });
+      }
     }
 
     router.replace("/briefing");

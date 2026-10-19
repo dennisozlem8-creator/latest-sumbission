@@ -14,18 +14,34 @@ import { recoveryPassport } from "@/lib/recovery-passport";
 import { GoniometerProgressChart } from "@/components/GoniometerProgressChart";
 import { DemoBanner } from "@/components/DemoBanner";
 import { clinicLocale, t } from "@/lib/i18n";
+import { WeeklyUpdateCard } from "@/components/WeeklyUpdateCard";
+import { ensureWeeklyUpdateNotice } from "@/lib/notifications";
+import { weeklyPatientUpdate } from "@/lib/weekly-update";
 
 export default function DoctorDashboardPage() {
   const { user, getPatientsForDoctor } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const patients = getPatientsForDoctor();
+  const locale = clinicLocale(user);
+  const weekly = isCareTeam(user?.role)
+    ? patients.map((patient) => weeklyPatientUpdate(patient, loadMeasurements(patient.email), new Date(), locale))
+    : [];
 
   useEffect(() => {
-    if (isCareTeam(user?.role)) {
-      setNotifications(getNotificationsForUser(user.email));
-      markNotificationsRead(user.email);
+    if (!user || !isCareTeam(user.role)) return;
+    const updates = getPatientsForDoctor().map((patient) =>
+      weeklyPatientUpdate(patient, loadMeasurements(patient.email), new Date(), clinicLocale(user))
+    );
+    if (updates.length > 0) {
+      ensureWeeklyUpdateNotice(
+        user.email,
+        updates[0].weekId,
+        updates.map((update) => `${update.name}: ${update.headline}`).join(" ")
+      );
     }
-  }, [user]);
+    setNotifications(getNotificationsForUser(user.email));
+    markNotificationsRead(user.email);
+  }, [user, getPatientsForDoctor]);
 
   if (!isCareTeam(user?.role)) {
     return (
@@ -38,7 +54,6 @@ export default function DoctorDashboardPage() {
     );
   }
 
-  const locale = clinicLocale(user);
   const attention = patients.filter((patient) => doctorWatchLevel(loadMeasurements(patient.email)).level !== "on-track").length;
   const clips = patients.reduce((sum, patient) => sum + loadMeasurements(patient.email).length, 0);
 
@@ -50,9 +65,14 @@ export default function DoctorDashboardPage() {
         title="Your patients"
         text="Review saved clips, form flags, and whether range is improving. Nothing here is invented."
         action={
-          <Link href="/pt-update" className="rm-btn h-11 min-h-0 rounded-full bg-[#2a332c] px-6 text-[#f7f3ea] hover:bg-[#3a4a3c]">
-            Push exercise update
-          </Link>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link href="/doctor/weekly" className="rm-btn h-11 min-h-0 rounded-full bg-[#2a332c] px-6 text-[#f7f3ea] hover:bg-[#3a4a3c]">
+              This week
+            </Link>
+            <Link href="/pt-update" className="rm-btn rm-btn-ghost h-11 min-h-0 rounded-full px-6">
+              Push exercise update
+            </Link>
+          </div>
         }
       />
 
@@ -61,6 +81,25 @@ export default function DoctorDashboardPage() {
         <DashStat label="Need a look" value={attention} hint="Watch or attention flags" />
         <DashStat label="Saved clips" value={clips} hint="Across the caseload" />
       </div>
+
+      {weekly.length > 0 ? (
+        <DashCard className="mt-6">
+          <div className="flex items-end justify-between gap-3 px-5 pt-5 sm:px-6">
+            <div>
+              <h2 className="rm-serif text-2xl font-semibold text-[#1b3348]">This week</h2>
+              <p className="mt-1 text-sm text-[#2f4a60]">{weekly[0].rangeLabel} · for doctors and caregivers on this account</p>
+            </div>
+            <Link href="/doctor/weekly" className="text-sm font-semibold text-[#1b3348]">
+              Open →
+            </Link>
+          </div>
+          <div className="divide-y divide-[#e8f3fb]">
+            {weekly.map((update) => (
+              <WeeklyUpdateCard key={update.email} update={update} compact />
+            ))}
+          </div>
+        </DashCard>
+      ) : null}
 
       <DashCard className="mt-6">
         {patients.length === 0 ? (

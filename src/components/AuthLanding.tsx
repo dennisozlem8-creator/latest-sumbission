@@ -120,6 +120,10 @@ export function AuthLanding({ mode }: AuthLandingProps) {
                     role="doctor"
                     className="inline-flex h-11 items-center justify-center rounded-full border-2 border-[#4f90c6] bg-white px-5 text-sm font-semibold text-[#1b3348] transition hover:bg-[#e8f3fb] sm:flex-1"
                   />
+                  <TryDemoButton
+                    role="caregiver"
+                    className="inline-flex h-11 items-center justify-center rounded-full border-2 border-[#4f90c6] bg-white px-5 text-sm font-semibold text-[#1b3348] transition hover:bg-[#e8f3fb] sm:flex-1"
+                  />
                 </div>
               </div>
               <ul className="mt-4 flex flex-wrap gap-2">

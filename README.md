@@ -23,6 +23,7 @@ Tap **Try the demo** on the homepage, or sign in:
 
 - Patient: `demo@revivemotion.ai` / `demo123`
 - Clinician: `clinic@revivemotion.ai` / `demo123`
+- Caregiver: `care@revivemotion.ai` / `demo123`
 
 The demo patient already has a still photo (92°), a live motion reading (78°), a muscle peak, pain 3/10, and a one-page **Session report** under `/report`. Use **ES / EN** in the header to switch the clinic to Spanish.
 

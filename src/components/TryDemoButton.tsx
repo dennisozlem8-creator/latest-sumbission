@@ -9,7 +9,7 @@ export function TryDemoButton({
   role = "patient",
   className,
 }: {
-  role?: "patient" | "doctor";
+  role?: "patient" | "doctor" | "caregiver";
   className?: string;
 }) {
   const { enterDemo } = useAuth();
@@ -22,10 +22,10 @@ export function TryDemoButton({
       className={className}
       onClick={() => {
         enterDemo(role);
-        router.replace(role === "doctor" ? "/doctor" : "/briefing");
+        router.replace(role === "patient" ? "/briefing" : role === "caregiver" ? "/doctor/weekly" : "/doctor");
       }}
     >
-      {role === "doctor" ? t("tryClinicianDemo", locale) : t("tryDemo", locale)}
+      {role === "doctor" ? t("tryClinicianDemo", locale) : role === "caregiver" ? t("tryCaregiverDemo", locale) : t("tryDemo", locale)}
     </button>
   );
 }

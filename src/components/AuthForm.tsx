@@ -22,6 +22,7 @@ export function AuthForm({ mode, defaultRole = "patient" }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [doctorEmail, setDoctorEmail] = useState("");
+  const [caregiverEmail, setCaregiverEmail] = useState("");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [error, setError] = useState("");
 
@@ -54,6 +55,7 @@ export function AuthForm({ mode, defaultRole = "patient" }: AuthFormProps) {
             password,
             role,
             doctorEmail: doctorEmail || undefined,
+            caregiverEmail: caregiverEmail || undefined,
             notificationsEnabled,
           });
 
@@ -138,6 +140,18 @@ export function AuthForm({ mode, defaultRole = "patient" }: AuthFormProps) {
                 type="email"
                 value={doctorEmail}
                 onChange={(e) => setDoctorEmail(e.target.value)}
+                className="w-full rounded-xl border border-[var(--border)] bg-background px-4 py-2.5 outline-none focus:border-brand"
+              />
+            </div>
+            <div>
+              <label htmlFor="caregiverEmail" className="mb-1 block text-sm text-muted">
+                {t("caregiverEmailOptional", locale)}
+              </label>
+              <input
+                id="caregiverEmail"
+                type="email"
+                value={caregiverEmail}
+                onChange={(e) => setCaregiverEmail(e.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-background px-4 py-2.5 outline-none focus:border-brand"
               />
             </div>

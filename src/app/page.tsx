@@ -85,9 +85,14 @@ export default function Home() {
                 </>
               )}
               {careTeam && (
-                <Link href="/doctor" className="rm-btn rm-btn-brand inline-flex h-12 min-h-0 w-full rounded-full">
-                  Open care dashboard
-                </Link>
+                <>
+                  <Link href="/doctor/weekly" className="rm-btn rm-btn-brand inline-flex h-12 min-h-0 w-full rounded-full">
+                    This week’s patient updates
+                  </Link>
+                  <Link href="/doctor" className="rm-btn rm-btn-ghost inline-flex h-12 min-h-0 w-full rounded-full">
+                    Open care dashboard
+                  </Link>
+                </>
               )}
             </div>
           </div>
