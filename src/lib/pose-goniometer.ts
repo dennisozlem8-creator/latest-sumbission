@@ -25,32 +25,74 @@ export type MovementSummary = {
 type PoseLandmark = {
   x: number;
   y: number;
+  z?: number;
   visibility?: number;
+  presence?: number;
 };
 
 type PoseLandmarkerLike = {
   detectForVideo: (
     video: HTMLVideoElement,
     timestamp: number
-  ) => { landmarks?: PoseLandmark[][] };
+  ) => { landmarks?: PoseLandmark[][]; worldLandmarks?: PoseLandmark[][] };
   close?: () => void;
 };
 
+function landmarkerOptions(runningMode: "VIDEO" | "IMAGE", delegate: "GPU" | "CPU") {
+  return {
+    baseOptions: { modelAssetPath: MODEL_URL, delegate },
+    runningMode,
+    numPoses: 1,
+    minPoseDetectionConfidence: 0.45,
+    minPosePresenceConfidence: 0.45,
+    minTrackingConfidence: 0.45,
+  };
+}
+
 const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm";
 const MODEL_URL =
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task";
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
 let landmarkerPromise: Promise<PoseLandmarkerLike> | null = null;
 
 export function summarizeMovement(samples: MovementSample[]): MovementSummary | null {
-  if (samples.length === 0) return null;
-  const angles = samples.map((sample) => sample.angle);
+  const refined = refineMovementSamples(samples);
+  if (refined.length === 0) return null;
+  const angles = refined.map((sample) => sample.angle).sort((a, b) => a - b);
+  const min = angles[0];
+  const peak = angles[angles.length - 1];
   return {
-    peak: Math.max(...angles),
-    min: Math.min(...angles),
-    range: Math.max(...angles) - Math.min(...angles),
-    duration: samples[samples.length - 1]?.time ?? 0,
+    peak,
+    min,
+    range: peak - min,
+    duration: refined[refined.length - 1]?.time ?? 0,
   };
+}
+
+/** Drop shaky frames and one-frame spikes so the saved peak is a real position. */
+export function refineMovementSamples(samples: MovementSample[]): MovementSample[] {
+  const visible = samples.filter((sample) => (sample.visibility ?? 1) >= 0.4);
+  const source = visible.length >= 4 ? visible : samples;
+  if (source.length === 0) return [];
+  const smoothed = source.map((sample, index) => {
+    const window = source.slice(Math.max(0, index - 2), index + 3).map((item) => item.angle);
+    window.sort((a, b) => a - b);
+    return { ...sample, angle: window[Math.floor(window.length / 2)] };
+  });
+  const kept: MovementSample[] = [];
+  for (const sample of smoothed) {
+    const prev = kept[kept.length - 1];
+    if (prev && sample.time - prev.time < 0.25 && Math.abs(sample.angle - prev.angle) > 35) continue;
+    kept.push(sample);
+  }
+  return kept.length >= 4 ? kept : smoothed;
+}
+
+export function stableAngle(history: number[], next: number, window = 5) {
+  history.push(next);
+  if (history.length > window) history.splice(0, history.length - window);
+  const sorted = [...history].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
 }
 
 export async function getPoseLandmarker(): Promise<PoseLandmarkerLike> {
@@ -67,56 +109,103 @@ async function createLandmarker(): Promise<PoseLandmarkerLike> {
   const vision = await import("@mediapipe/tasks-vision");
   const fileset = await vision.FilesetResolver.forVisionTasks(WASM_URL);
   try {
-    return await vision.PoseLandmarker.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: MODEL_URL, delegate: "GPU" },
-      runningMode: "VIDEO",
-      numPoses: 1,
-    });
+    return await vision.PoseLandmarker.createFromOptions(fileset, landmarkerOptions("VIDEO", "GPU"));
   } catch {
-    return vision.PoseLandmarker.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" },
-      runningMode: "VIDEO",
-      numPoses: 1,
-    });
+    return vision.PoseLandmarker.createFromOptions(fileset, landmarkerOptions("VIDEO", "CPU"));
   }
 }
 
 function visibilityOf(landmark?: PoseLandmark) {
-  return landmark?.visibility ?? 0;
+  if (!landmark) return 0;
+  const visibility = landmark.visibility ?? 0;
+  const presence = landmark.presence ?? 1;
+  return Math.min(visibility, presence);
+}
+
+function imageDistance(a: PoseLandmark, b: PoseLandmark) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function limbScore(landmarks: PoseLandmark[], ids: [number, number, number], strict: boolean) {
+  const a = landmarks[ids[0]];
+  const b = landmarks[ids[1]];
+  const c = landmarks[ids[2]];
+  if (!a || !b || !c) return -1;
+  const vis = (visibilityOf(a) + visibilityOf(b) + visibilityOf(c)) / 3;
+  const minJoint = strict ? 0.45 : 0.2;
+  if (visibilityOf(b) < minJoint || vis < (strict ? 0.4 : 0.18)) return -1;
+  const thigh = imageDistance(a, b);
+  const shank = imageDistance(b, c);
+  if (thigh < 0.015 || shank < 0.015) return -1;
+  const ratio = thigh / shank;
+  if (strict && (ratio < 0.4 || ratio > 2.5)) return -1;
+  if (!strict && (ratio < 0.22 || ratio > 3.6)) return -1;
+  return vis * 3 + Math.min(thigh + shank, 1.2);
+}
+
+function spatialAngle(a: PoseLandmark, b: PoseLandmark, c: PoseLandmark) {
+  const ax = a.x - b.x;
+  const ay = a.y - b.y;
+  const az = (a.z ?? 0) - (b.z ?? 0);
+  const bx = c.x - b.x;
+  const by = c.y - b.y;
+  const bz = (c.z ?? 0) - (b.z ?? 0);
+  const magA = Math.hypot(ax, ay, az);
+  const magB = Math.hypot(bx, by, bz);
+  if (magA < 0.05 || magB < 0.05) return null;
+  const ratio = magA / magB;
+  if (ratio < 0.45 || ratio > 2.2) return null;
+  if (magA > 0.85 || magB > 0.85 || magA < 0.18 || magB < 0.18) return null;
+  const cos = Math.min(1, Math.max(-1, (ax * bx + ay * by + az * bz) / (magA * magB)));
+  return Math.round((Math.acos(cos) * 180) / Math.PI);
 }
 
 export function sampleFromPose(
   landmarks: PoseLandmark[] | undefined,
   preferLeft: boolean,
   time: number,
-  joint: KidsJoint = "knee"
+  joint: KidsJoint = "knee",
+  worldLandmarks?: PoseLandmark[]
 ): MovementSample | null {
   const needed = joint === "ankle" ? 33 : 17;
   if (!landmarks || landmarks.length < needed) return null;
   const triple = JOINT_TRIPLES[joint] ?? JOINT_TRIPLES.knee;
-  const first = preferLeft ? triple.left : triple.right;
-  const second = preferLeft ? triple.right : triple.left;
-  const score = (ids: [number, number, number]) =>
-    visibilityOf(landmarks[ids[0]]) + visibilityOf(landmarks[ids[1]]) + visibilityOf(landmarks[ids[2]]);
-  const pick = score(first) >= score(second) ? first : second;
+  const preferred = preferLeft ? triple.left : triple.right;
+  const otherIds = preferLeft ? triple.right : triple.left;
+  const preferredScore = limbScore(landmarks, preferred, true);
+  const otherScore = limbScore(landmarks, otherIds, true);
+  let pick = preferred;
+  if (preferredScore < 0 && otherScore >= 0) pick = otherIds;
+  else if (preferredScore >= 0 && otherScore > preferredScore + 1.25 && preferredScore < 1.4) pick = otherIds;
+  else if (preferredScore < 0 && otherScore < 0) {
+    const loosePreferred = limbScore(landmarks, preferred, false);
+    const looseOther = limbScore(landmarks, otherIds, false);
+    if (loosePreferred < 0 && looseOther < 0) return null;
+    pick = loosePreferred >= looseOther ? preferred : otherIds;
+  }
   const a = landmarks[pick[0]];
   const b = landmarks[pick[1]];
   const c = landmarks[pick[2]];
   if (!a || !b || !c) return null;
-  if (visibilityOf(a) < 0.2 || visibilityOf(b) < 0.2 || visibilityOf(c) < 0.2) {
-    return null;
-  }
 
   const hipPoint = { x: a.x, y: a.y };
   const kneePoint = { x: b.x, y: b.y };
   const anklePoint = { x: c.x, y: c.y };
-  const other = pick === first ? second : first;
+  const flat = kneeAngleDegrees(hipPoint, kneePoint, anklePoint);
+  const worldA = worldLandmarks?.[pick[0]];
+  const worldB = worldLandmarks?.[pick[1]];
+  const worldC = worldLandmarks?.[pick[2]];
+  const depth = worldA && worldB && worldC ? spatialAngle(worldA, worldB, worldC) : null;
+  const sideOn = imageDistance(a, b) + imageDistance(b, c) >= 0.22;
+  const angle = depth == null || (sideOn && Math.abs(depth - flat) > 25) ? flat : depth;
+  if (angle < 12 || angle > 178) return null;
+  const other = pick === preferred ? otherIds : preferred;
   const leftSide = pick === triple.left;
   const sameShoulder = leftSide ? landmarks[11] : landmarks[12];
   const otherShoulder = leftSide ? landmarks[12] : landmarks[11];
   return {
     time,
-    angle: kneeAngleDegrees(hipPoint, kneePoint, anklePoint),
+    angle,
     hip: hipPoint,
     knee: kneePoint,
     ankle: anklePoint,
@@ -144,7 +233,7 @@ export function detectVideoFrame(
   joint: KidsJoint = "knee"
 ): MovementSample | null {
   const result = landmarker.detectForVideo(video, timestamp);
-  return sampleFromPose(result.landmarks?.[0], preferLeft, time, joint);
+  return sampleFromPose(result.landmarks?.[0], preferLeft, time, joint, result.worldLandmarks?.[0]);
 }
 
 function waitForMetadata(video: HTMLVideoElement, ms = 8000) {
@@ -281,7 +370,7 @@ export async function analyzeVideoElement(
   }
 
   onProgress?.(100);
-  return samples;
+  return refineMovementSamples(samples);
 }
 
 export async function analyzeVideoUrl(
@@ -337,28 +426,31 @@ const JOINT_TRIPLES: Record<KidsJoint, { left: [number, number, number]; right: 
 async function createImageLandmarker() {
   const vision = await import("@mediapipe/tasks-vision");
   const fileset = await vision.FilesetResolver.forVisionTasks(WASM_URL);
-  const options = {
-    baseOptions: { modelAssetPath: MODEL_URL, delegate: "GPU" as const },
-    runningMode: "IMAGE" as const,
-    numPoses: 1,
-  };
   try {
-    return await vision.PoseLandmarker.createFromOptions(fileset, options);
+    return await vision.PoseLandmarker.createFromOptions(fileset, landmarkerOptions("IMAGE", "GPU"));
   } catch {
-    return vision.PoseLandmarker.createFromOptions(fileset, {
-      ...options,
-      baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" },
-    });
+    return vision.PoseLandmarker.createFromOptions(fileset, landmarkerOptions("IMAGE", "CPU"));
   }
 }
 
-function loadHtmlImage(url: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Could not read that photo."));
-    image.src = url;
-  });
+export async function orientedImageUrl(file: Blob) {
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return URL.createObjectURL(file);
+    }
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+    return URL.createObjectURL(blob ?? file);
+  } catch {
+    return URL.createObjectURL(file);
+  }
 }
 
 export async function analyzeImageUrl(
@@ -367,9 +459,17 @@ export async function analyzeImageUrl(
 ): Promise<PhotoPoseResult | null> {
   const landmarker = await createImageLandmarker();
   try {
-    const image = await loadHtmlImage(imageUrl);
-    const result = landmarker.detect(image);
-    const sample = sampleFromPose(result.landmarks?.[0], preferLeft, 0);
+    const blob = await fetch(imageUrl).then((response) => response.blob());
+    const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    const result = landmarker.detect(canvas);
+    const sample = sampleFromPose(result.landmarks?.[0], preferLeft, 0, "knee", result.worldLandmarks?.[0]);
     if (!sample) return null;
     return {
       angle: sample.angle,

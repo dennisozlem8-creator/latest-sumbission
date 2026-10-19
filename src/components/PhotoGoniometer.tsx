@@ -21,7 +21,10 @@ import {
   analyzeVideoUrl,
   detectVideoFrame,
   getPoseLandmarker,
+  orientedImageUrl,
   pickRecorderMime,
+  refineMovementSamples,
+  stableAngle,
   summarizeMovement,
   type MovementSample,
 } from "@/lib/pose-goniometer";
@@ -294,6 +297,7 @@ export function PhotoGoniometer({
   const recordStartedRef = useRef(0);
   const recordingRef = useRef(false);
   const preferLeftRef = useRef(false);
+  const liveAnglesRef = useRef<number[]>([]);
   const [overlay, setOverlay] = useState({ left: 0, top: 0, width: 100, height: 100 });
   const [step, setStep] = useState<Step>("upload");
   const [liveCamera, setLiveCamera] = useState(false);
@@ -486,11 +490,14 @@ export function PhotoGoniometer({
           preferLeftRef.current,
           Number(elapsed.toFixed(2))
         );
-        if (sample && recordingRef.current) {
-          samplesRef.current.push(sample);
+        const stable = sample
+          ? { ...sample, angle: stableAngle(liveAnglesRef.current, sample.angle) }
+          : null;
+        if (stable && recordingRef.current) {
+          samplesRef.current.push(stable);
         }
-        if (sample) setLiveAngle(sample.angle);
-        if (canvas) drawPose(canvas, video, sample, sample?.angle ?? null);
+        if (stable) setLiveAngle(stable.angle);
+        if (canvas) drawPose(canvas, video, stable, stable?.angle ?? null);
         if (recordingRef.current) {
           const nextSec = Math.min(MAX_RECORD_SEC, Math.floor(elapsed));
           setRecordSec(nextSec);
@@ -511,6 +518,7 @@ export function PhotoGoniometer({
     if (!stream) return;
     setCameraError("");
     samplesRef.current = [];
+    liveAnglesRef.current = [];
     setSamples([]);
     setSaved(false);
     chunksRef.current = [];
@@ -572,7 +580,7 @@ export function PhotoGoniometer({
     scrollToAnalysis();
     const liveSamples = samplesRef.current;
     if (liveSamples.length >= 3) {
-      setSamples(liveSamples);
+      setSamples(refineMovementSamples(liveSamples));
     }
     const clip = playbackRef.current;
     if (clip) {
@@ -585,7 +593,7 @@ export function PhotoGoniometer({
       const found = clip
         ? await analyzeVideoElement(clip, preferLeft, setAnalyzePct)
         : await analyzeVideoUrl(url, preferLeft, setAnalyzePct);
-      const result = found.length >= 4 ? found : liveSamples;
+      const result = found.length >= 4 ? found : refineMovementSamples(liveSamples);
       if (result.length < 4) {
         setCameraError(
           "Could not see the hip, knee, and ankle clearly. Record from the side, with the whole leg in view, then tap Analyze movement again."
@@ -661,11 +669,11 @@ export function PhotoGoniometer({
     onPhotoFile(new File([blob], "knee-photo.jpg", { type: "image/jpeg" }));
   }
 
-  function onPhotoFile(file: File | undefined) {
+  async function onPhotoFile(file: File | undefined) {
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
     if (photoUrl) URL.revokeObjectURL(photoUrl);
-    const url = URL.createObjectURL(file);
+    const url = await orientedImageUrl(file);
     setPhotoUrl(url);
     setVideoReady(false);
     setPoints({});

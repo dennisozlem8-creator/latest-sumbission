@@ -6,6 +6,7 @@ import {
   detectVideoFrame,
   getPoseLandmarker,
   kidsJointLabels,
+  stableAngle,
   type KidsJoint,
   type MovementSample,
 } from "@/lib/pose-goniometer";
@@ -73,6 +74,7 @@ export function KidsPhotoCamera({
   const requestRef = useRef(0);
   const rafRef = useRef(0);
   const preferLeftRef = useRef(preferLeft);
+  const liveAnglesRef = useRef<number[]>([]);
   const jointRef = useRef(joint);
   const onAngleRef = useRef(onAngle);
   const onStatusRef = useRef(onStatus);
@@ -154,7 +156,7 @@ export function KidsPhotoCamera({
             rafRef.current = requestAnimationFrame(loopPose);
             return;
           }
-          const sample = detectVideoFrame(
+          const raw = detectVideoFrame(
             landmarker,
             video,
             performance.now(),
@@ -162,6 +164,9 @@ export function KidsPhotoCamera({
             0,
             jointRef.current
           );
+          const sample = raw
+            ? { ...raw, angle: stableAngle(liveAnglesRef.current, raw.angle) }
+            : null;
           if (sample) onAngleRef.current(sample.angle);
           if (canvas) drawKidsPose(canvas, video, sample, labelsRef.current);
           rafRef.current = requestAnimationFrame(loopPose);
