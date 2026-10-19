@@ -93,17 +93,18 @@ function activeDays(patient: User, rows: GoniometerMeasurement[], from: Date, to
 function checkInLine(patient: User, from: Date, to: Date, locale: Locale) {
   if (!patient.checkInAnswers || !inRange(patient.lastCheckInDate, from, to)) return null;
   const answers = patient.checkInAnswers;
+  const show = (value: string | number) => String(value).toLowerCase();
   const bits = [
-    answers.swelling != null ? (locale === "es" ? `hinchazón ${answers.swelling}` : `swelling ${answers.swelling}`) : null,
+    answers.swelling != null ? (locale === "es" ? `hinchazón ${show(answers.swelling)}` : `swelling ${show(answers.swelling)}`) : null,
     answers["knee-stiffness"] != null
       ? locale === "es"
-        ? `rigidez ${answers["knee-stiffness"]}`
-        : `stiffness ${answers["knee-stiffness"]}`
+        ? `rigidez ${show(answers["knee-stiffness"])}`
+        : `stiffness ${show(answers["knee-stiffness"])}`
       : null,
     answers["knee-giving-way"] != null
       ? locale === "es"
-        ? `fallo ${answers["knee-giving-way"]}`
-        : `giving way ${answers["knee-giving-way"]}`
+        ? `fallo ${show(answers["knee-giving-way"])}`
+        : `giving way ${show(answers["knee-giving-way"])}`
       : null,
   ].filter(Boolean);
   if (bits.length === 0) return null;
