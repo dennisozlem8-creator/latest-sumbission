@@ -446,12 +446,12 @@ export function usbBlockReason() {
   const iPhone = /iPhone|iPad|iPod/i.test(ua);
   const safari = /Safari/i.test(ua) && !/Chrome|CriOS|Edg|Firefox|Chromium/i.test(ua);
   if (iPhone) {
-    return "You are on a phone. The Elegoo USB cable cannot connect here. Use the Mac or Windows computer where Arduino IDE is installed, and open Google Chrome — not this phone.";
+    return "You are on a phone. Pair the Bluetooth sensor from Chrome on a Mac or Windows computer — not this phone.";
   }
   if (safari) {
-    return "You are in Safari. Safari cannot talk to USB. On this same computer, open Google Chrome (the round red-yellow-green icon), go to https://www.revivemotion.ai/heart, then tap Connect with USB.";
+    return "You are in Safari. Safari cannot pair this Bluetooth device. On this same computer, open Google Chrome, go to https://www.revivemotion.ai/heart, then tap Connect with Bluetooth.";
   }
-  return "This browser cannot use USB. Open Google Chrome or Microsoft Edge on the computer the Elegoo is plugged into.";
+  return "This browser cannot use Bluetooth. Open Google Chrome or Microsoft Edge on a computer.";
 }
 
 export function heartRateBrowserHelp() {
@@ -459,7 +459,7 @@ export function heartRateBrowserHelp() {
   const blocked = usbBlockReason();
   if (blocked) return blocked;
   if (usbHeartRateSupported()) {
-    return "Close Serial Monitor in Arduino IDE. Tap Connect with USB, then pick Arduino Uno in the Chrome list. Rest a finger on the MAX30102 lights.";
+    return "Put the strap on, then tap Connect with Bluetooth and pick it in the Chrome list.";
   }
   if (bluetoothHeartRateSupported()) {
     return "Put the strap on, wait a few seconds, then tap Connect. A Chrome window will ask which device to use.";

@@ -98,10 +98,10 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
         setError(
           bluetooth
             ? "No port was chosen. Pair the HC-05 first, then pick the port named HC-05. Not Bluetooth-Incoming-Port."
-            : "No USB device was chosen. Plug in the Elegoo, close Serial Monitor, tap Connect with USB, then pick Arduino Uno."
+            : "No Bluetooth device was chosen. Pair the HC-05, then pick the port named HC-05."
         );
       } else {
-        setError(err instanceof Error ? err.message : "Could not open USB.");
+        setError(err instanceof Error ? err.message : "Could not open Bluetooth.");
       }
     } finally {
       setConnecting(false);
@@ -132,24 +132,18 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-foreground">
             {connecting
-              ? usingBluetooth
-                ? "Opening the HC-05 motion sensor"
-                : "Opening the USB motion sensor"
+              ? "Opening the Bluetooth motion sensor"
               : ready
                 ? i2cOk || angle > 0
-                  ? usingBluetooth
-                    ? "Bluetooth motion sensor — live angle"
-                    : "USB motion sensor — live angle"
-                  : usingBluetooth
-                    ? "HC-05 connected — waiting for the angle"
-                    : "USB motion sensor connected — waiting for the angle"
-                : "USB motion sensor"}
+                  ? "Bluetooth motion sensor — live angle"
+                  : "Bluetooth connected — waiting for the angle"
+                : "Bluetooth motion sensor"}
           </p>
           <p className="mt-1 text-sm text-muted">
             {ready
-              ? `${deviceName || "USB motion sensor"} · live tilt`
+              ? `${deviceName || "Bluetooth motion sensor"} · live tilt`
               : compact
-                ? "USB motion sensor. Live angle while you move."
+                ? "Bluetooth motion sensor. Live angle while you move."
                 : mpuUsbHelp()}
           </p>
         </div>
@@ -161,17 +155,11 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
           <p className="text-xs font-bold uppercase tracking-wide text-muted">Motion signal</p>
           <p className="mt-1 font-semibold text-foreground">
             {i2cOk || angle > 0
-              ? usingBluetooth
-                ? "Bluetooth yes — move the joint and watch ANGLE"
-                : "USB yes — move the joint and watch ANGLE"
-              : usingBluetooth
-                ? "Bluetooth yes — waiting for I2C OK. The Uno must be running bluetooth-mpu.ino, with HC-05 TXD on pin 0 and RXD on pin 1."
-                : "USB yes — waiting for I2C OK. If the log says SCAN none, the chip has no power or SCL/SDA are swapped."}
+              ? "Bluetooth yes — move the joint and watch ANGLE"
+              : "Bluetooth yes — waiting for the angle. Power the Uno from a phone charger. HC-05 TXD is pin 0, RXD is pin 1."}
           </p>
           <p className="mt-1 text-sm text-body">
-            {usingBluetooth
-              ? "Tape the MPU-6050 on one bone of the joint. Power the Uno from a phone charger. The number is tilt, not a diagnosis."
-              : "Tape the MPU-6050 on one bone of the joint. Keep USB plugged into the computer. The number is tilt, not a diagnosis."}
+            Tape the MPU-6050 on one bone of the joint. No USB cable. The number is tilt, not a diagnosis.
           </p>
         </div>
       )}
@@ -204,17 +192,9 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
               type="button"
               className="rm-btn rm-btn-brand w-full disabled:opacity-40 sm:w-auto sm:px-8"
               disabled={connecting || !usbOk}
-              onClick={() => void connectUsb()}
-            >
-              {connecting ? "Connecting…" : "Connect with USB"}
-            </button>
-            <button
-              type="button"
-              className="rm-btn rm-btn-ghost w-full disabled:opacity-40 sm:w-auto sm:px-8"
-              disabled={connecting || !usbOk}
               onClick={() => void connectUsb(BLUETOOTH_MPU_BAUD)}
             >
-              {connecting ? "Connecting…" : "Connect HC-05"}
+              {connecting ? "Connecting…" : "Connect with Bluetooth"}
             </button>
           </>
         ) : (

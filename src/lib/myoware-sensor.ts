@@ -336,10 +336,10 @@ export async function connectWiredMyoWare(
 export function myoWareBrowserHelp() {
   if (typeof navigator === "undefined") return "";
   if (bluetoothMyoWareSupported()) {
-    return "Wireless: tap Connect with Bluetooth and pick MyoWareSensor1. Wired Uno: tap Connect with USB.";
+    return "Tap Connect with Bluetooth and pick MyoWareSensor1.";
   }
   if (!usbHeartRateSupported()) {
     return usbBlockReason().replace("/heart", "/muscle");
   }
-  return "Close Serial Monitor. Tap Connect with USB, pick the Arduino, then flex the muscle under the pads.";
+  return "Tap Connect with Bluetooth and pick MyoWareSensor1, then flex the muscle under the pads.";
 }

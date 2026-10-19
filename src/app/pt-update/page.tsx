@@ -113,7 +113,7 @@ export default function PTUpdatePage() {
             className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[#f7fbfe] px-4 py-4 text-base font-normal text-[#1b3348]"
           >
             <option value="camera">Phone or laptop camera</option>
-            <option value="motion">USB motion sensor</option>
+            <option value="motion">Bluetooth motion sensor</option>
             <option value="muscle">Bluetooth muscle sensor</option>
           </select>
         </label>

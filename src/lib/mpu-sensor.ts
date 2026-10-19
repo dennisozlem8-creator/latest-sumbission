@@ -35,7 +35,7 @@ export function parseSerialMpuLine(line: string): SerialMpuSample | null {
 
 export function requestUsbMpuPort() {
   if (!navigator.serial?.requestPort) {
-    throw new Error(mpuUsbHelp() || "This browser cannot use USB.");
+    throw new Error(mpuUsbHelp() || "This browser cannot use Bluetooth.");
   }
   return navigator.serial.requestPort();
 }
@@ -48,7 +48,7 @@ export function mpuUsbHelp() {
   const blocked = usbBlockReason().replace("/heart", "/motion");
   if (blocked) return blocked;
   if (mpuUsbSupported()) {
-    return "Close Serial Monitor. Tap Connect with USB, pick the Arduino Uno, then move the joint.";
+    return "Pair the HC-05 in System Settings. PIN 1234. Tap Connect with Bluetooth and pick the port named HC-05.";
   }
   return blocked;
 }
@@ -77,7 +77,7 @@ export async function connectWiredMpu(options: ConnectOptions): Promise<MpuConne
       /* already open */
     } else if (name === "NetworkError" || /failed to open/i.test(message)) {
       throw new Error(
-        "Chrome could not open the USB port. Close Serial Monitor, disconnect MyoWare or Heart if that tab is using USB, unplug the Elegoo, plug it back in, then tap Connect with USB."
+        "Chrome could not open the HC-05. Pair it in System Settings with PIN 1234, then tap Connect with Bluetooth and pick the port named HC-05."
       );
     } else {
       throw error;
@@ -95,7 +95,7 @@ export async function connectWiredMpu(options: ConnectOptions): Promise<MpuConne
   const reader = port.readable?.getReader();
   if (!reader) {
     await port.close().catch(() => undefined);
-    throw new Error("The USB port opened, but this browser could not read from it.");
+    throw new Error("Bluetooth opened, but this browser could not read the angle.");
   }
 
   const onGone = () => {

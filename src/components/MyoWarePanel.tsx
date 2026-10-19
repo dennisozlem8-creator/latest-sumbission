@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { myoWareBrowserHelp, myoWareHasSignal, requestUsbMyoWarePort } from "@/lib/myoware-sensor";
+import { myoWareBrowserHelp, myoWareHasSignal } from "@/lib/myoware-sensor";
 import { useAuth } from "./AuthProvider";
 import { useMyoWare } from "./MyoWareProvider";
 
@@ -12,7 +12,6 @@ type MyoWarePanelProps = {
 export function MyoWarePanel({ compact }: MyoWarePanelProps) {
   const { user } = useAuth();
   const {
-    usbSupported,
     bluetoothSupported,
     connecting,
     connected,
@@ -26,7 +25,6 @@ export function MyoWarePanel({ compact }: MyoWarePanelProps) {
     usbProof,
     recording,
     recordCount,
-    connectUsb,
     connectBluetooth,
     disconnect,
     startRecording,
@@ -34,7 +32,7 @@ export function MyoWarePanel({ compact }: MyoWarePanelProps) {
   } = useMyoWare();
   const [saveMessage, setSaveMessage] = useState("");
   const [now, setNow] = useState(() => Date.now());
-  const canConnect = usbSupported || bluetoothSupported;
+  const canConnect = bluetoothSupported;
   const live = connected && emg != null;
   const flexed = live && emg >= 12;
 
@@ -197,26 +195,6 @@ export function MyoWarePanel({ compact }: MyoWarePanelProps) {
             >
               {connecting ? "Connecting…" : "Connect with Bluetooth"}
             </button>
-            <button
-              type="button"
-              className="rm-btn rm-btn-ghost flex-1 disabled:opacity-40"
-              disabled={connecting || !usbSupported}
-              onClick={async () => {
-                setSaveMessage("");
-                if (!usbSupported) return;
-                try {
-                  const port = await requestUsbMyoWarePort();
-                  await connectUsb(port);
-                } catch (err) {
-                  const name = err instanceof DOMException ? err.name : "";
-                  if (name !== "NotFoundError" && name !== "AbortError") {
-                    await connectUsb();
-                  }
-                }
-              }}
-            >
-              Connect with USB (setup only)
-            </button>
           </>
         ) : (
           <>
@@ -255,8 +233,7 @@ export function MyoWarePanel({ compact }: MyoWarePanelProps) {
 
       {!compact && (
         <p className="mt-3 text-xs text-muted">
-          Wireless: snap the Wireless Shield on the sensor, POWER SOURCE = VBAT, POWER ON, then Connect with Bluetooth.
-          Wired Uno: VIN→5V, GND→GND, ENV→A0.
+          Snap the Wireless Shield on the sensor, set POWER SOURCE to VBAT, turn POWER ON, then Connect with Bluetooth.
         </p>
       )}
     </section>

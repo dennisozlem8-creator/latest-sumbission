@@ -78,17 +78,17 @@ const faq: { keywords: string[]; answer: string }[] = [
   {
     keywords: ["mpu", "6050", "uno", "elegoo", "motion sensor", "gyroscope", "accel", "i2c", "scan none"],
     answer:
-      "No I2C means USB works and the MPU-6050 did not answer. VCC to 5V (or 3.3V if that pin is labeled only 3.3V), GND to GND, SCL to A5, SDA to A4. Re-download wired-mpu.ino, upload, close Serial Monitor. Chrome → Connect with USB. Look for SCAN 0x68 or 0x69, not SCAN none. If still none, swap SCL and SDA and upload again.",
+      "No I2C means Bluetooth is open and the MPU-6050 did not answer. VCC to 3.3V, GND to GND, SCL to A5, SDA to A4. HC-05 TXD to pin 0, RXD to pin 1. Power the Uno from a phone charger. Chrome → Connect with Bluetooth → pick HC-05.",
   },
   {
     keywords: ["rom", "range of motion", "sensor", "heart", "bpm", "polar", "bluetooth"],
     answer:
-      "For joint angle, use Photo Goniometer or MPU-6050 on the Elegoo over USB (Motion page → Connect with USB). For heart rate, pair a Bluetooth strap or a wired pulse sensor. Polar H9/H10, Wahoo TICKR, Coospo, Magene work over Bluetooth. Apple Watch usually does not.",
+      "For joint angle, use Photo Goniometer or the Bluetooth MPU-6050 (Motion page → Connect with Bluetooth → HC-05). For heart rate, pair a Bluetooth strap. Polar H9/H10, Wahoo TICKR, Coospo, and Magene work over Bluetooth. Apple Watch usually does not.",
   },
   {
     keywords: ["myoware", "myo ware", "emg", "muscle", "env", "wireless", "bluetooth"],
     answer:
-      "Wireless: program the MyoWare Wireless Shield in Arduino IDE as ESP32 Dev Module with wireless-myoware.ino. Unplug USB, snap it onto the muscle sensor, POWER SOURCE VBAT, POWER ON. Chrome → Muscle sensor → Connect with Bluetooth → MyoWareSensor1. Do not use the Elegoo Uno for wireless. Wired Uno is VIN to 5V, GND to GND, ENV to A0.",
+      "Program the MyoWare Wireless Shield in Arduino IDE as ESP32 Dev Module with wireless-myoware.ino. Unplug the cable, snap it onto the muscle sensor, POWER SOURCE VBAT, POWER ON. Chrome → Muscle sensor → Connect with Bluetooth → MyoWareSensor1.",
   },
   {
     keywords: ["goniometer", "photo", "angle", "hip", "mark"],

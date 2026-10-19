@@ -120,7 +120,7 @@ export function MotionLiveDemo() {
             {running ? "Replay demo move" : "Play a demo move"}
           </button>
           <p className="mt-2 text-center text-sm text-[#2f4a60]">
-            Same screen as a live ROM move. Plug the Elegoo Uno into USB and tap Connect with USB when you have the hardware.
+            Same screen as a live ROM move. Power the Uno from a phone charger and tap Connect with Bluetooth when you have the hardware.
           </p>
         </div>
         <div className="hidden bg-[#cfe4f4] lg:flex lg:items-center">

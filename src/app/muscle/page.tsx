@@ -110,32 +110,6 @@ export default function MuscleSensorPage() {
           </a>
         </DashCard>
 
-        <DashCard className="mt-4 p-5">
-          <h2 className="rm-serif text-xl font-semibold text-[#1b3348]">Wired Uno instead</h2>
-          <p className="mt-2 text-sm text-[#2f4a60]">Three wires only if you are not using the Wireless Shield.</p>
-          <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/myoware-wiring.svg"
-              alt="MyoWare 2.0 VIN to 5V, GND to GND, ENV to A0"
-              width={640}
-              height={280}
-              className="h-auto w-full"
-            />
-          </div>
-          <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-body">
-            <li>VIN → Uno 5V</li>
-            <li>GND → GND on the Elegoo board</li>
-            <li>ENV → A0</li>
-          </ol>
-          <a
-            href="/firmware/wired-myoware"
-            className="rm-btn rm-btn-ghost mt-4 inline-flex w-full justify-center"
-          >
-            Download wired-myoware.ino
-          </a>
-        </DashCard>
-
         <HelpBlock title="If Bluetooth cannot find MyoWareSensor1">
           <ol className="list-decimal space-y-2 pl-5">
             <li>Use Chrome or Edge on a computer. Not Safari. Not iPhone.</li>
@@ -147,8 +121,8 @@ export default function MuscleSensorPage() {
 
         <HelpBlock title="If ENV stays 0">
           <ol className="list-decimal space-y-2 pl-5">
-            <li>The Wireless Shield POWER switch must be ON, or for wired Uno the sensor switch must be ON.</li>
-            <li>Wireless: the shield must be snapped onto the muscle sensor. Wired: ENV must be in A0, not A4 or A5.</li>
+            <li>The Wireless Shield POWER switch must be ON.</li>
+            <li>The shield must be snapped onto the muscle sensor.</li>
             <li>Pads on clean skin: MID on the muscle, END along it, REF on bone.</li>
             <li>If the ENV LED stays on at rest, turn the GAIN screw a little counterclockwise.</li>
           </ol>

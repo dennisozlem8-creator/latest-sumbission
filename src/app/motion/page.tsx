@@ -26,8 +26,8 @@ export default function MotionSensorPage() {
     <DashShell>
       <DashIntro
         kicker="Measure"
-        title="USB motion sensor"
-        text="Play a demo move, then connect with USB. The live angle fills the Recovery Passport."
+        title="Bluetooth motion sensor"
+        text="Power the Uno from a phone charger. Pair the HC-05, then connect. The live angle fills the Recovery Passport."
       />
       <div className="mt-5">
         <MotionLiveDemo />
@@ -40,29 +40,12 @@ export default function MotionSensorPage() {
       />
 
       <DashCard className="mt-6 p-5">
-        <h2 className="rm-serif text-2xl font-semibold text-[#1b3348]">Do this now — no I2C</h2>
-        <p className="mt-2 text-sm leading-6 text-[#2f4a60]">
-          USB is working. The MPU-6050 did not answer. That is a power or wire problem, not a website problem.
-        </p>
+        <h2 className="rm-serif text-2xl font-semibold text-[#1b3348]">Connect with Bluetooth</h2>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-[#2f4a60]">
-          <li>Disconnect on this page. Close Serial Monitor. Unplug USB.</li>
-          <li>
-            Read the power pin. If it says <strong className="text-[#1b3348]">VCC</strong> or{" "}
-            <strong className="text-[#1b3348]">VIN</strong>, that wire goes to Uno{" "}
-            <strong className="text-[#1b3348]">5V</strong>. If it says only{" "}
-            <strong className="text-[#1b3348]">3.3V</strong>, use Uno 3.3V. Never put 5V on a 3.3V-only pin.
-          </li>
-          <li>GND → GND on the Elegoo board (not only a breadboard rail). Push all four wires in hard.</li>
-          <li>SCL → A5. SDA → A4. Leave INT, AD0, XDA, and XCL empty.</li>
-          <li>
-            Download{" "}
-            <a className="font-medium text-brand-light underline" href="/firmware/wired-mpu">
-              wired-mpu.ino
-            </a>
-            . File → Open that file. Tools → Board → Arduino Uno. Upload. Close Serial Monitor.
-          </li>
-          <li>Chrome → Connect with USB. Look for SCAN 0x68 or 0x69, then I2C OK and ANGLE — not SCAN none.</li>
-          <li>If SCAN is still none, swap only SCL and SDA, re-upload, then Connect with USB again.</li>
+          <li>Power the Uno from a phone charger. Leave the Mac USB cable unplugged.</li>
+          <li>The HC-05 light should blink fast. In System Settings → Bluetooth, connect HC-05. PIN 1234.</li>
+          <li>In Chrome, tap Connect with Bluetooth and pick the line named HC-05.</li>
+          <li>Tip the sensor. The log should show I2C OK, then ANGLE.</li>
         </ol>
       </DashCard>
 
@@ -71,8 +54,8 @@ export default function MotionSensorPage() {
       </div>
 
       <DashCard className="mt-4 p-5">
-        <h2 className="rm-serif text-xl font-semibold text-[#1b3348]">Elegoo Uno — four wires</h2>
-        <p className="mt-2 text-sm text-[#2f4a60]">Use the computer that has Arduino IDE. Chrome or Edge, not Safari.</p>
+        <h2 className="rm-serif text-xl font-semibold text-[#1b3348]">MPU-6050 wires</h2>
+        <p className="mt-2 text-sm text-[#2f4a60]">These stay on the Uno. The computer connects over Bluetooth.</p>
         <div className="mt-4 overflow-hidden rounded-xl bg-white ring-1 ring-[#4f90c6]/12">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -84,16 +67,16 @@ export default function MotionSensorPage() {
           />
         </div>
         <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-body">
-          <li>VCC → Uno 5V. If that pin is labeled only 3.3V, use Uno 3.3V instead. Never put 5V on a 3.3V-only pin.</li>
+          <li>VCC → Uno 3.3V.</li>
           <li>GND → GND</li>
           <li>SCL → A5</li>
           <li>SDA → A4. Leave INT and AD0 empty.</li>
         </ol>
         <a
-          href="/firmware/wired-mpu"
+          href="/firmware/bluetooth-mpu"
           className="rm-btn rm-btn-ghost mt-4 inline-flex w-full justify-center"
         >
-          Download wired-mpu.ino
+          Download bluetooth-mpu.ino
         </a>
       </DashCard>
 
@@ -109,7 +92,7 @@ export default function MotionSensorPage() {
           <li>Leave EN, STATE, and KEY empty.</li>
         </ol>
         <p className="mt-3 text-sm leading-6 text-[#2f4a60]">
-          Unplug the wires on pins 0 and 1, upload bluetooth-mpu.ino with the board set to Arduino Uno, then plug those two wires back. Unplug the Uno from the Mac and power it from a phone charger. Pair the HC-05. The PIN is 1234. Then tap Connect HC-05 and pick the port named HC-05.
+          A USB cable is only for loading the program once. Unplug the wires on pins 0 and 1, upload bluetooth-mpu.ino with the board set to Arduino Uno, then plug those two wires back. Unplug the Uno from the Mac and power it from a phone charger. Pair the HC-05. The PIN is 1234. Then tap Connect with Bluetooth and pick the port named HC-05.
         </p>
         <a href="/firmware/bluetooth-mpu" className="rm-btn rm-btn-ghost mt-4 inline-flex w-full justify-center">
           Download bluetooth-mpu.ino
@@ -120,14 +103,14 @@ export default function MotionSensorPage() {
         <ol className="list-decimal space-y-2 pl-5">
           <li>
             Download{" "}
-            <a className="font-medium text-brand-light underline" href="/firmware/wired-mpu">
-              wired-mpu.ino
+            <a className="font-medium text-brand-light underline" href="/firmware/bluetooth-mpu">
+              bluetooth-mpu.ino
             </a>
             . File → Open that file. Do not paste it into an old sketch.
           </li>
-          <li>Tools → Board → Arduino Uno. Tools → Port → the Elegoo. Upload. Close Serial Monitor.</li>
-          <li>Tape the MPU-6050 on one bone of the joint so it cannot flop.</li>
-          <li>Keep USB in the computer. This page → Connect with USB → pick Arduino Uno. Move. ANGLE should change.</li>
+          <li>Unplug the HC-05 wires on pins 0 and 1. Tools → Board → Arduino Uno. Upload. Close Serial Monitor. Plug those wires back.</li>
+          <li>Unplug the Uno from the computer and power it from a phone charger.</li>
+          <li>Pair HC-05 with PIN 1234. This page → Connect with Bluetooth → pick HC-05. Tip the sensor. ANGLE should change.</li>
         </ol>
       </HelpBlock>
 
@@ -136,7 +119,7 @@ export default function MotionSensorPage() {
           <li>Confirm four wires only: VCC, GND, SCL, SDA. INT, AD0, XDA, XCL stay empty.</li>
           <li>Power: if the pin says VCC or VIN, use Uno 5V. If it says only 3.3V, use Uno 3.3V. GND must be on the Elegoo GND.</li>
           <li>SCL in A5, SDA in A4. If SCAN is still none, swap those two wires and upload again.</li>
-          <li>Re-upload wired-mpu.ino. Close Serial Monitor. Chrome → Connect with USB.</li>
+          <li>Re-upload bluetooth-mpu.ino. Close Serial Monitor. Power from a phone charger, then Connect with Bluetooth.</li>
         </ol>
       </HelpBlock>
 

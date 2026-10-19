@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Exercise } from "@/lib/assessments";
 import { getExerciseMedia, getKidsExerciseImage } from "@/lib/exercise-media";
 import { persistMeasurement } from "@/lib/goniometer";
-import { connectWiredMpu, mpuUsbHelp, mpuUsbSupported, requestUsbMpuPort, type MpuConnection } from "@/lib/mpu-sensor";
+import { BLUETOOTH_MPU_BAUD, connectWiredMpu, mpuUsbHelp, mpuUsbSupported, requestUsbMpuPort, type MpuConnection } from "@/lib/mpu-sensor";
 import { createRepCounter } from "@/lib/rep-counter";
 import { useAuth } from "./AuthProvider";
 import { getFeedbackState } from "@/lib/feedback";
@@ -46,7 +46,7 @@ const measures: { id: MeasureId; kicker: string; name: string; line: string; ima
     id: "motion",
     kicker: "MPU-6050",
     name: "Motion",
-    line: "USB motion sensor. Bend and return. The bots count each rep.",
+    line: "Bluetooth motion sensor. Bend and return. The bots count each rep.",
     image: "/images/landing-mpu.png?v=8",
   },
   {
@@ -198,6 +198,7 @@ export function QuestGame({
       const port = await requestUsbMpuPort();
       const connection = await connectWiredMpu({
         port,
+        baudRate: BLUETOOTH_MPU_BAUD,
         onAngle: (next) => {
           setMotionReady(true);
           setMotionManual(false);
@@ -217,10 +218,10 @@ export function QuestGame({
       const name = err instanceof DOMException ? err.name : "";
       setMotionError(
         name === "NotFoundError" || name === "AbortError"
-          ? "No USB device was chosen."
+          ? "No Bluetooth device was chosen. Pair the HC-05, then pick HC-05."
           : err instanceof Error
             ? err.message
-            : "Could not open USB."
+            : "Could not open Bluetooth."
       );
     } finally {
       setMotionConnecting(false);
@@ -363,8 +364,8 @@ export function QuestGame({
                       : motionReady
                         ? recording
                           ? "Live angle"
-                          : "USB motion sensor ready"
-                        : "Plug in the USB motion sensor"}
+                          : "Bluetooth motion sensor ready"
+                        : "Pair the Bluetooth motion sensor"}
                 </p>
                 {motionError ? <p className="mt-1 text-sm text-[#5b6685]">{motionError}</p> : null}
               </div>

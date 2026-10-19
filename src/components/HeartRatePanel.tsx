@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   heartRateBrowserHelp,
-  requestUsbHeartPort,
   usbBlockReason,
   usbHasFingerData,
   usbSourceConfirmed,
@@ -36,7 +35,6 @@ export function HeartRatePanel({ compact, hideWired, onConnected }: HeartRatePan
     recording,
     recordCount,
     connect,
-    connectUsb,
     disconnect,
     startRecording,
     stopAndSave,
@@ -156,7 +154,7 @@ export function HeartRatePanel({ compact, hideWired, onConnected }: HeartRatePan
       {serialLog.length > 0 && (
         <div className="mt-3 rounded-xl bg-background px-3 py-2 font-mono text-xs text-muted">
           <p className="mb-1 font-sans text-[11px] font-semibold uppercase tracking-wide text-muted">
-            USB log — look for SCAN and RAW
+            Sensor log — look for BPM
           </p>
           {serialLog.map((line, i) => (
             <p
@@ -187,8 +185,8 @@ export function HeartRatePanel({ compact, hideWired, onConnected }: HeartRatePan
 
       {!canConnect && !hideWired && (
         <p className="mt-3 text-sm text-muted">
-          Open this site on a Windows or Mac computer in <strong className="text-foreground">Chrome or Edge</strong>.
-          A phone — even Chrome on iPhone — cannot see the USB cable. Arduino IDE does not turn USB on for the phone.
+          Open this site on a Windows or Mac computer in <strong className="text-foreground">Chrome or Edge</strong> to
+          pair a Bluetooth heart strap. Safari and iPhone cannot pair it here.
         </p>
       )}
       {hideWired && !connected && !bluetoothSupported && (
@@ -201,47 +199,17 @@ export function HeartRatePanel({ compact, hideWired, onConnected }: HeartRatePan
       <div className={`mt-4 flex flex-col gap-2 ${compact ? "" : "sm:flex-row sm:flex-wrap"}`}>
         {!connected ? (
           <>
-            {!hideWired && (
             <button
               type="button"
               className="rm-btn rm-btn-brand flex-1 disabled:opacity-40"
-              disabled={connecting}
-              onClick={async () => {
-                setSaveMessage("");
-                try {
-                  const port = await requestUsbHeartPort();
-                  const ok = await connectUsb(port);
-                  if (ok) {
-                    setSaveMessage("");
-                    onConnected?.();
-                  }
-                } catch (err) {
-                  const name = err instanceof DOMException ? err.name : "";
-                  if (name === "NotFoundError" || name === "AbortError") {
-                    setSaveMessage(
-                      "No USB device was chosen. Plug in the Elegoo, close Arduino Serial Monitor, tap Connect with USB, then click the Arduino / USB Serial Device in the Chrome window."
-                    );
-                    return;
-                  }
-                  const ok = await connectUsb();
-                  if (ok) onConnected?.();
-                }
-              }}
-            >
-              {connecting ? "Connecting…" : "Connect with USB"}
-            </button>
-            )}
-            <button
-              type="button"
-              className="rm-btn rm-btn-ghost flex-1 disabled:opacity-40"
-              disabled={connecting}
+              disabled={connecting || !bluetoothSupported}
               onClick={async () => {
                 setSaveMessage("");
                 const ok = await connect(false);
                 if (ok) onConnected?.();
               }}
             >
-              Bluetooth strap
+              {connecting ? "Connecting…" : "Connect with Bluetooth"}
             </button>
             {bluetoothSupported && (
               <button
@@ -293,11 +261,6 @@ export function HeartRatePanel({ compact, hideWired, onConnected }: HeartRatePan
         )}
       </div>
 
-      {!compact && !hideWired && (
-        <p className="mt-3 text-xs text-muted">
-          Wired: Elegoo Uno R3 + MAX30102. If the power pin says VIN or VCC, use Uno 5V. Leave the sensor 3.3V pin empty. Never put 5V on a pin labeled only 3.3V. GND→GND, SCL→A5, SDA→A4.
-        </p>
-      )}
     </section>
   );
 }

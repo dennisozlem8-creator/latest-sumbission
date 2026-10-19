@@ -51,15 +51,15 @@ export function SensorHelp({ variant = "default" }: SensorHelpProps) {
       {open && (
         <div className="mt-3 space-y-2 text-sm text-body">
           <p>
-            <strong className="text-foreground">Heart rate can be live.</strong> For a wired sensor,
-            build an Arduino pulse circuit, plug in USB, and tap <strong className="text-foreground">Connect with USB</strong>{" "}
-            in Chrome or Edge. A Bluetooth strap also works. Live BPM then replaces the fake heart
-            numbers. Recordings save on this device.
+            <strong className="text-foreground">Heart rate can be live.</strong> Pair a Bluetooth
+            heart strap and tap <strong className="text-foreground">Connect with Bluetooth</strong> in
+            Chrome or Edge. Live BPM then replaces the practice heart numbers. Recordings save on this
+            device.
           </p>
           <p>
-            <strong className="text-foreground">Joint ROM is still a demo.</strong> Scan / Connect
-            for the ankle or knee sensor still generates practice angles in the browser. Photo
-            Goniometer is the real knee-angle tool today.
+            <strong className="text-foreground">Joint angle is live over Bluetooth.</strong> Power
+            the MPU-6050 from a phone charger, pair the HC-05, and tap Connect with Bluetooth. Photo
+            Goniometer still works from the camera.
           </p>
           <p>
             Apple Watch and many Fitbits do not share heart rate with a website. iPhone Safari

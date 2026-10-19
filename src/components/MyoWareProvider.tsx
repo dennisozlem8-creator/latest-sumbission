@@ -131,7 +131,7 @@ export function MyoWareProvider({ children }: { children: React.ReactNode }) {
     setError(
       wasBluetooth
         ? "The Wireless Shield disconnected. Flip POWER ON and tap Connect with Bluetooth."
-        : "The MyoWare disconnected. Plug the Elegoo in and tap Connect with USB."
+        : "The MyoWare disconnected. Turn the shield on and tap Connect with Bluetooth."
     );
   }, []);
 
@@ -176,11 +176,11 @@ export function MyoWareProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         const name = err instanceof DOMException ? err.name : "";
         if (name === "NotFoundError" || name === "AbortError") {
-          setError("No USB device was chosen. Plug in the Elegoo, then tap Connect with USB.");
+          setError("No Bluetooth device was chosen. Turn the shield on, then tap Connect with Bluetooth.");
         } else if (name === "SecurityError") {
           setError("USB access was blocked. Use Chrome or Edge on a computer, and allow the serial port.");
         } else {
-          setError(err instanceof Error ? err.message : "Could not open the MyoWare USB connection.");
+          setError(err instanceof Error ? err.message : "Could not open the MyoWare Bluetooth connection.");
         }
         setConnected(false);
         return false;
@@ -246,7 +246,7 @@ export function MyoWareProvider({ children }: { children: React.ReactNode }) {
 
   const startRecording = useCallback(() => {
     if (!connected) {
-      setError("Connect the MyoWare with Bluetooth or USB first.");
+      setError("Connect the MyoWare with Bluetooth first.");
       return;
     }
     samplesRef.current = [];

@@ -10,7 +10,7 @@ export default function ShopPage() {
       <DashIntro
         kicker="Shop"
         title="Devices and braces"
-        text="Support gear for the phone camera, USB motion sensor, and Bluetooth muscle sensor."
+        text="Support gear for the phone camera, Bluetooth motion sensor, and Bluetooth muscle sensor."
       />
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {shopProducts.map((product) => (

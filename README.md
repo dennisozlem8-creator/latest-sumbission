@@ -48,15 +48,15 @@ The motion chip stays on the Elegoo Uno. An HC-05 sends the same angle lines ove
 1. MPU VCC stays on Uno 3.3V if that is where it is now. GND → GND. SDA → A4. SCL → A5.
 2. HC-05 VCC → Uno 5V. GND → GND. TXD → pin 0 (RX). RXD → pin 1 (TX). Leave EN, STATE, and KEY empty. Do not use pins 2 and 3.
 3. Unplug the wires on pins 0 and 1. Board: Arduino Uno. Upload `bluetooth-mpu.ino` from the Motion page. Plug those two wires back in. Close Serial Monitor. Power the Uno from a phone charger.
-4. Pair the HC-05 with the computer. PIN `1234`. On the Motion page tap **Connect HC-05** and pick the port named HC-05, not Bluetooth-Incoming-Port.
+4. Pair the HC-05 with the computer. PIN `1234`. On the Motion page tap **Connect with Bluetooth** and pick the port named HC-05, not Bluetooth-Incoming-Port.
 
 ## MPU-6050 (Elegoo Uno R3)
 
-1. VCC → Uno 5V. If the pin is labeled only 3.3V, use Uno 3.3V. GND → GND. SCL → A5. SDA → A4. Leave INT empty.
-2. Arduino IDE: Tools → Board → **Arduino Uno**. Download `wired-mpu.ino` from the Motion page (`/motion`). File → Open. Upload. Close Serial Monitor.
-3. Open Chrome or Edge. Go to **MPU-6050** (`/motion`). Tap **Connect with USB**. Pick the Arduino.
-4. The page confirms `HELLO MPU6050 ELEGOO_UNO_R3`, then live `ANGLE` lines. Tape the sensor on the limb and move.
-5. If the log says `SCAN none` or `no I2C`, USB is fine and the chip did not answer. Recheck VCC (5V vs 3.3V) and GND, re-upload `wired-mpu.ino`, then swap SCL and SDA.
+1. VCC → Uno 3.3V. GND → GND. SCL → A5. SDA → A4. Leave INT empty.
+2. HC-05 VCC → Uno 5V. GND → GND. TXD → pin 0. RXD → pin 1.
+3. Arduino IDE: Tools → Board → **Arduino Uno**. Download `bluetooth-mpu.ino` from the Motion page (`/motion`). File → Open. Unplug pins 0 and 1, upload, then plug them back. Close Serial Monitor. Power the Uno from a phone charger.
+4. Open Chrome or Edge. Go to **MPU-6050** (`/motion`). Tap **Connect with Bluetooth**. Pick HC-05.
+5. The page confirms `HELLO MPU6050 ELEGOO_UNO_R3`, then live `ANGLE` lines. Tape the sensor on the limb and tip it.
 
 ## MyoWare 2.0 Wireless Shield
 
@@ -68,27 +68,13 @@ Do not use the Elegoo Uno for this. The Wireless Shield is its own ESP32 board.
 4. POWER OFF. Unplug USB. Snap the shield onto the muscle sensor. Pads: MID / END / REF.
 5. POWER ON. Chrome → `/muscle` → **Connect with Bluetooth** → MyoWareSensor1. Flex.
 
-## MyoWare 2.0 (wired Uno)
+## Heart sensor
 
-1. VIN → Uno 5V. GND → Uno GND. ENV → A0. Flip the MyoWare power switch ON. The VIN LED should stay lit.
-2. Snap electrodes: MID on the muscle belly, END along the muscle, REF on nearby bone.
-3. Download `wired-myoware.ino` from the Muscle page (or open `firmware/wired-myoware/wired-myoware.ino`). Board: Arduino Uno. Upload, then close Serial Monitor.
-4. Open Chrome or Edge. Go to **MyoWare 2.0** (`/muscle`). Tap **Connect with USB**. Flex. ENV should rise.
-
-## Heart sensor (live Bluetooth or USB)
-
-A Bluetooth heart-rate strap **or** a wired Arduino pulse sensor can show live BPM.
-
-### Wired (Elegoo Uno R3 + MAX30102)
-
-1. If the power pin says VIN or VCC, use Uno 5V. Leave the sensor 3.3V pin empty. Never put 5V on a pin labeled only 3.3V. GND → Uno GND. SCL → A5. SDA → A4. Leave INT unconnected.
-2. Download `wired-heart.ino` from the Heart page (or open `firmware/wired-heart/wired-heart.ino`). Board: Arduino Uno. Upload, then close Serial Monitor. The sketch recovers a stuck I2C bus and will try SDA/SCL swapped if the first scan finds nothing.
-3. Open Chrome or Edge. Go to **Heart sensor**. Tap **Connect with USB**.
-4. The page confirms `HELLO MAX30102 ELEGOO_UNO_R3`, then live `RAW` / `BPM` lines. Cover both LEDs with a fingertip.
+A Bluetooth heart-rate strap shows live BPM.
 
 ### Bluetooth strap
 
-Polar H9/H10, Wahoo TICKR, Coospo, Magene, and similar BLE heart-rate straps. Apple Watch and many Fitbits do not share heart rate with a website. Joint ROM scan is still a demo.
+Polar H9/H10, Wahoo TICKR, Coospo, Magene, and similar Bluetooth heart-rate straps. Apple Watch and many Fitbits do not share heart rate with a website. Motion and muscle sensors connect over Bluetooth too.
 
 ## Run locally
 
