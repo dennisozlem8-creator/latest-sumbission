@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n";
 import { getAssessment, type Exercise } from "@/lib/assessments";
+import { profileDoseFactor, profileReason, profileScoreDelta, type RecoveryProfile } from "@/lib/recovery-profile";
 
 export type CoachDetail = {
   steps: string[];
@@ -356,15 +357,15 @@ function detailFor(id: string, locale: Locale): CoachDetail {
   };
 }
 
-function adjustDose(sets: string, pain: number, locale: Locale): string {
-  if (pain >= 7) {
-    const shorter = sets.replace(/(\d+)\s*(reps|rep)/i, (_, n: string) => `${Math.max(4, Math.round(Number(n) * 0.6))} reps`);
-    return `${shorter} · ${locale === "es" ? "dosis corta" : "shorter dose"}`;
-  }
-  if (pain <= 3) {
-    return sets.replace(/(\d+)\s*(reps|rep)/i, (_, n: string) => `${Number(n) + 2} reps`);
-  }
-  return sets;
+function adjustDose(sets: string, pain: number, locale: Locale, factor = 1): string {
+  const next = sets.replace(/(\d+)\s*(reps|rep)/i, (_, n: string) => {
+    const count = Number(n);
+    if (factor < 1) return `${Math.max(4, Math.round(count * factor))} reps`;
+    if (pain <= 3) return `${count + 2} reps`;
+    return `${count} reps`;
+  });
+  if (factor < 1) return `${next} · ${locale === "es" ? "dosis corta" : "shorter dose"}`;
+  return next;
 }
 
 function buildReasons(
@@ -402,6 +403,8 @@ export function rankExercises(input: {
   prescribedName?: string;
   previousIds: string[];
   locale: Locale;
+  profile?: RecoveryProfile;
+  swelling?: boolean;
 }): RankedExercise[] {
   const assessment = getAssessment(input.areaId);
   if (!assessment) return [];
@@ -441,6 +444,7 @@ export function rankExercises(input: {
     if (pain > 3 && pain < 7 && gentle) score += 2;
     if (times === 0) score += 1;
     if (times >= 3 && !prescribed) score -= 2;
+    score += profileScoreDelta(exercise.id, exercise.tags, input.areaId, input.profile, pain);
     const paused = pain >= 7 && strength && !prescribed;
     return { exercise, score, prescribed, gentle, strength, paused, times };
   });
@@ -476,24 +480,29 @@ export function rankExercises(input: {
     return 0;
   });
 
+  const factor = profileDoseFactor(input.profile, pain, Boolean(input.swelling));
+
   return ordered.map((row) => {
     const today = todayIds.has(row.exercise.id);
+    const reasons = row.paused
+      ? [input.locale === "es" ? `Dolor ${pain}/10. La fuerza espera.` : `Pain is ${pain}/10. Strength waits.`]
+      : buildReasons(input.locale, {
+          prescribed: row.prescribed,
+          gentle: row.gentle,
+          strength: row.strength,
+          gap,
+          fresh: row.times === 0,
+          pain,
+          peak: input.latestPeak,
+          goal,
+        });
+    const fitted = profileReason(row.exercise.id, row.exercise.tags, input.areaId, input.profile, input.locale);
+    if (fitted && !row.paused && !reasons.includes(fitted)) reasons.push(fitted);
     return {
       exercise: row.exercise,
       detail: detailFor(row.exercise.id, input.locale),
-      dose: row.paused ? (input.locale === "es" ? "Pausa hoy" : "Pause today") : adjustDose(row.exercise.sets, pain, input.locale),
-      reasons: row.paused
-        ? [input.locale === "es" ? `Dolor ${pain}/10. La fuerza espera.` : `Pain is ${pain}/10. Strength waits.`]
-        : buildReasons(input.locale, {
-            prescribed: row.prescribed,
-            gentle: row.gentle,
-            strength: row.strength,
-            gap,
-            fresh: row.times === 0,
-            pain,
-            peak: input.latestPeak,
-            goal,
-          }),
+      dose: row.paused ? (input.locale === "es" ? "Pausa hoy" : "Pause today") : adjustDose(row.exercise.sets, pain, input.locale, factor),
+      reasons: reasons.slice(0, 3),
       score: row.score,
       today,
       paused: row.paused && !today,

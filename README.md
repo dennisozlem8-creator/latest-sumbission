@@ -25,11 +25,15 @@ Tap **Try the demo** on the homepage, or sign in:
 - Clinician: `clinic@revivemotion.ai` / `demo123`
 - Caregiver: `care@revivemotion.ai` / `demo123`
 
-The demo patient already has a still photo (92°), a live motion reading (78°), a muscle peak, pain 3/10, and a one-page **Session report** under `/report`. Use **ES / EN** in the header to switch the clinic to Spanish.
+The demo patient already has a still photo (92°), a live motion reading (78°), a muscle peak, pain 3/10, and a one-page **Session report** under `/report`. Jordan’s Recover AI profile is age 40–64, on her feet, rebuilding after a repeat sprain. Use **ES / EN** in the header to switch the clinic to Spanish.
 
 The public homepage shows one photo / motion / muscle section that explains each way to measure, plus hip/knee/ankle marks and a progress chart. Signed-in home is the recovery dashboard.
 
 Adult dashboards (home, briefing, care, charts, clinician, session, Photo Goniometer, MyoWare, library, RecoverAI, shop) use the same clinic shell: photo tiles, real rings and heatmaps, Measure · Coach · Report · Improve. Charts use saved clips only — no invented compliance or pain trends.
+
+## Recover AI
+
+`/recover-ai` orders today’s exercises from the injury, pain, saved range, and the clinician’s prescription, plus a profile the patient sets on that page: age band, sex, where the day loads the body (desk, standing, lifting, driving, sport, or home), injury stage, and history (surgery, a fall, repeat sprain, bone health). Sex is stored and shown. It does not swap in a different catalog. Age, a new flare, surgery, or a fall shortens the dose and prefers supported moves. Work boosts the moves that match that day. The same ranking feeds the exercise library and the session list. This is home coaching, not a diagnosis.
 
 ## Photo Goniometer
 

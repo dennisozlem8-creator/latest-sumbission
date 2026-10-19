@@ -38,6 +38,8 @@ function useRanked(user: User, areaId: string) {
   const previousIds = user.exerciseHistory.flatMap((row) => row.exerciseIds);
   const pain = user.painToday ?? 3;
   const goal = user.targetRom || 100;
+  const swelling =
+    typeof user.checkInAnswers?.swelling === "string" && /noticeable|^yes\b/i.test(user.checkInAnswers.swelling.trim());
   const ranked = rankExercises({
     areaId,
     pain,
@@ -46,6 +48,8 @@ function useRanked(user: User, areaId: string) {
     prescribedName: user.ptPrescription?.exerciseName,
     previousIds,
     locale,
+    profile: user.recoveryProfile,
+    swelling,
   });
   return { locale, pain, goal, peak: progress.latestPeak, ranked };
 }

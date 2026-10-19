@@ -97,6 +97,13 @@ function demoPatient(locale: Locale): User {
     sessionTime: "morning",
     language: locale,
     painToday: 3,
+    recoveryProfile: {
+      ageBand: "40-64",
+      sex: "female",
+      work: "standing",
+      stage: "rebuilding",
+      history: ["sprain"],
+    },
     lastCheckInDate: today,
     checkInAnswers: {
       sleep: "OK — some rest",

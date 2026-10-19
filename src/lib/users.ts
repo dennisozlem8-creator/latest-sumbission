@@ -1,3 +1,5 @@
+import { parseRecoveryProfile, type RecoveryProfile } from "./recovery-profile";
+
 export type InjuryType = "knee" | "ankle" | "elbow" | "wrist" | "other";
 
 export type MeasureMethod = "camera" | "motion" | "muscle";
@@ -60,6 +62,8 @@ export type User = {
   ptPrescription?: PTPrescription;
   lastCheckInDate?: string;
   checkInAnswers?: Record<string, string | number>;
+  /** Age, sex, work, stage, and history used to order today’s list. Sex is recorded only. */
+  recoveryProfile?: RecoveryProfile;
 };
 
 const USERS_KEY = "revive-motion-users";
@@ -109,6 +113,7 @@ export function loadUsers(): User[] {
       ptPrescription: u.ptPrescription,
       lastCheckInDate: u.lastCheckInDate,
       checkInAnswers: u.checkInAnswers,
+      recoveryProfile: parseRecoveryProfile(u.recoveryProfile),
     }));
   } catch {
     return [];

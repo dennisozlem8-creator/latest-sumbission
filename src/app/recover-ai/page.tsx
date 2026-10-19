@@ -9,6 +9,8 @@ import { t, type CopyKey } from "@/lib/i18n";
 import { loadMeasurements } from "@/lib/goniometer";
 import { progressSnapshot } from "@/lib/recovery-plan";
 import { TodayPlan } from "@/components/ExerciseLibrary";
+import { RecoveryProfileCard } from "@/components/RecoveryProfileCard";
+import { planBrief } from "@/lib/recovery-profile";
 
 type Message = { role: "user" | "assistant"; text: string };
 
@@ -16,12 +18,7 @@ export default function RecoverAIPage() {
   const { user } = useAuth();
   const [report, setReport] = useState("");
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      text: "Hi! I'm your RecoverAI coach. Ask about exercises, pain, ROM progress, or your rehab plan.",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,10 +28,16 @@ export default function RecoverAIPage() {
   if (!user) return null;
 
   const locale = user.language ?? "en";
+  const es = locale === "es";
   const prescription = user.ptPrescription;
   const streak = calculateStreak(user);
   const clips = loadMeasurements(user.email);
   const progress = progressSnapshot(clips, user.targetRom || 100);
+  const brief = planBrief(user, locale, user.painToday ?? 3, progress.latestPeak, user.targetRom || 100);
+  const greeting = es
+    ? "Soy la guía de Recover AI. La lista de hoy usa tu edad, tu trabajo, la etapa, el historial, el dolor y el rango guardado. No es un diagnóstico."
+    : "I'm the Recover AI guide. Today's list uses your age, work, stage, history, pain, and saved range. It is not a diagnosis.";
+  const thread: Message[] = [{ role: "assistant", text: greeting }, ...messages];
   const week = lastDaysActive(user, 7);
   const weekPct = Math.round((week.filter((d) => d.active).length / 7) * 100);
   const currentRom = progress.latestPeak ?? user.baselineRom;
@@ -86,8 +89,27 @@ export default function RecoverAIPage() {
       <DashIntro
         kicker="Coach"
         title={t("recoverAI", locale)}
-        text="Ask about today’s plan, pain, or range. Answers stay on this device. Charts below use saved readings."
+        text={
+          es
+            ? "La lista sigue la lesión, la edad, el trabajo, la etapa y el historial, junto con el dolor y el rango guardado. El sexo queda en el perfil. No hay un catálogo distinto por sexo. Esto es entrenamiento en casa, no un diagnóstico."
+            : "The list follows the injury, age, work, stage, and history, along with pain and saved range. Sex stays on the profile. There is not a separate catalog by sex. This is home coaching, not a diagnosis."
+        }
       />
+
+      <div className="mt-6">
+        <RecoveryProfileCard user={user} />
+      </div>
+
+      <section className="mt-6 rounded-[1.5rem] bg-white p-5 shadow-[0_14px_32px_rgba(27,51,72,0.07)] ring-1 ring-[#4f90c6]/12 sm:p-6">
+        <h2 className="rm-serif text-2xl font-semibold text-[#1b3348]">{es ? "Por qué esta lista" : "Why this list"}</h2>
+        <ul className="mt-3 space-y-2">
+          {brief.map((line) => (
+            <li key={line} className="text-sm leading-6 text-[#2f4a60]">
+              {line}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <div className="mt-6">
         <TodayPlan user={user} />
@@ -136,7 +158,7 @@ export default function RecoverAIPage() {
             ))}
           </div>
           <div className="max-h-72 space-y-3 overflow-y-auto p-4">
-            {messages.map((msg, i) => (
+            {thread.map((msg, i) => (
               <div
                 key={i}
                 className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${

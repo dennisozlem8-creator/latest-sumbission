@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { parseRecoveryProfile } from "@/lib/recovery-profile";
 import { loadUsers, saveUsers, isCareTeam, type User, type UserRole, type PTPrescription } from "@/lib/users";
 import { seedDemoAccounts } from "@/lib/demo-account";
 import { loadDeviceLocale, saveDeviceLocale, type Locale } from "@/lib/i18n";
@@ -75,6 +76,7 @@ function normalizeUser(raw: Partial<User> & Pick<User, "email" | "password" | "n
     ptPrescription: raw.ptPrescription,
     lastCheckInDate: raw.lastCheckInDate,
     checkInAnswers: raw.checkInAnswers,
+    recoveryProfile: parseRecoveryProfile(raw.recoveryProfile),
   };
 }
 

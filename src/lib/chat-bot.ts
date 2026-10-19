@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n";
+import { planBrief } from "@/lib/recovery-profile";
 import type { User } from "@/lib/users";
 
 export type CoachStarter = "today" | "pain" | "score" | "clinic";
@@ -21,9 +22,10 @@ export function coachStarterAnswer(
   const from = firstPeak != null ? `${firstPeak}°` : `${user.baselineRom}°`;
 
   if (key === "today") {
+    const brief = planBrief(user, locale, pain, latestPeak, goal).slice(0, 4).join(" ");
     return es
-      ? `${name}, hoy empieza con ${exercise}. ${sets} series de ${reps}. Usa solo el método que indicó tu clínico, luego comparte el informe.`
-      : `${name}, start with ${exercise}. ${sets} sets of ${reps}. Use only the method your clinician prescribed, then share the report.`;
+      ? `${name}, hoy empieza con ${exercise}. ${sets} series de ${reps}. ${brief} Usa solo el método que indicó tu clínico.`
+      : `${name}, start with ${exercise}. ${sets} sets of ${reps}. ${brief} Use only the method your clinician prescribed.`;
   }
   if (key === "pain") {
     return es

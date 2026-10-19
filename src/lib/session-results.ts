@@ -28,7 +28,7 @@ export function areaIdForInjury(injuryType: string) {
 
 export function getSessionRecommendations(
   areaId: string,
-  user: Pick<User, "painToday" | "checkInAnswers" | "baselineRom" | "targetRom" | "ptPrescription">,
+  user: Pick<User, "painToday" | "checkInAnswers" | "baselineRom" | "targetRom" | "ptPrescription" | "recoveryProfile">,
   sessionAngle: number,
   previousExerciseIds: string[] = [],
   locale: Locale = "en"
@@ -42,6 +42,8 @@ export function getSessionRecommendations(
     pain = Math.max(pain, 5);
   }
 
+  const swelling =
+    typeof user.checkInAnswers?.swelling === "string" && /noticeable|^yes\b/i.test(user.checkInAnswers.swelling.trim());
   const ranked = rankExercises({
     areaId,
     pain,
@@ -50,6 +52,8 @@ export function getSessionRecommendations(
     prescribedName: user.ptPrescription?.exerciseName,
     previousIds: previousExerciseIds,
     locale,
+    profile: user.recoveryProfile,
+    swelling,
   });
   const today = ranked.filter((row) => row.today).map((row) => row.exercise);
   if (today.length >= 3) return today.slice(0, 3);
