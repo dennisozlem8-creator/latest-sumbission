@@ -159,7 +159,7 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
               : "Bluetooth yes — waiting for the angle. Power the Uno from a phone charger. HC-05 TXD is pin 0, RXD is pin 1."}
           </p>
           <p className="mt-1 text-sm text-body">
-            Tape the MPU-6050 on one bone of the joint. No USB cable. The number is tilt, not a diagnosis.
+            Tape the MPU-6050 on one bone of the joint. Power it from a phone charger. The number is tilt, not a diagnosis.
           </p>
         </div>
       )}

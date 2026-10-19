@@ -73,20 +73,14 @@ export function HeartRatePanel({ compact, hideWired, onConnected }: HeartRatePan
             {connecting
               ? "Looking for your heart sensor…"
               : live
-                ? source === "usb"
-                  ? confirmed
-                    ? "MAX30102 data confirmed"
-                    : "Wired heart sensor live"
-                  : "Heart sensor live"
+                ? "Heart sensor live"
                 : connected
                   ? "Heart sensor connected — waiting for a beat"
                   : "Connect a heart sensor"}
           </p>
           <p className="mt-1 text-sm text-muted">
             {live
-              ? source === "usb"
-                ? `${deviceName} · beats from the MAX30102 on the Elegoo Uno R3`
-                : `${deviceName} · live beats per minute`
+              ? `${deviceName} · live beats per minute`
               : connected
                 ? `${deviceName} · keep the sensor on the finger or chest`
                 : hideWired
@@ -291,9 +285,9 @@ function UsbSourceCard({
         ? "Sensor yes — put a finger on the lights"
         : "Checking the MAX30102";
   const status = !proof.started && !proof.chip
-    ? "USB is open. Waiting for the Elegoo to say HELLO."
+    ? "Connected. Waiting for the strap to send a beat."
     : usbOnly || scanNone
-      ? "No I2C means the heart chip did not answer. USB is fine. If the power pin says VIN or VCC, move that wire to Uno 5V. Leave the 3.3V pin empty. GND → GND. SCL → A5. SDA → A4."
+      ? "The heart sensor has not sent a beat yet. Wake the strap, stay close, and tap Connect with Bluetooth again."
     : waitingFinger
       ? "The chip is talking. Cover both red lights with one fingertip and hold still for 10 seconds. Do not use the fingertip tip only — cover both windows."
       : !fresh
@@ -315,7 +309,7 @@ function UsbSourceCard({
       <p className="mt-1 text-sm text-body">{status}</p>
       {!compact && (
         <ul className="mt-3 space-y-1 text-sm text-body">
-          <li>Board: {proof.board ?? "Elegoo Uno R3 (USB open)"}</li>
+          <li>Sensor: {proof.board ?? "Bluetooth heart strap"}</li>
           <li>Sensor: {proof.chip ?? "waiting for CHIP MAX30102"}</li>
           <li>
             I2C scan:{" "}
@@ -332,7 +326,7 @@ function UsbSourceCard({
           <li>
             Heart numbers:{" "}
             {proof.packetCount === 0
-              ? "none yet (USB messages are not heart data)"
+              ? "none yet"
               : [
                   fresh && ageMs != null ? (ageMs < 800 ? "now" : `${(ageMs / 1000).toFixed(1)}s ago`) : null,
                   proof.lastRaw != null ? `RAW ${proof.lastRaw}` : null,

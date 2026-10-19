@@ -1,7 +1,7 @@
 // Revive Motion — MyoWare 2.0 Wireless Shield (ESP32)
 // File → Open this file. Do not paste into an old sketch.
 // Arduino IDE → Tools → Board → ESP32 Arduino → ESP32 Dev Module
-// USB goes into the Wireless Shield, not the Elegoo Uno.
+// The programming cable goes into the Wireless Shield, not the Elegoo Uno. Then connect over Bluetooth.
 // POWER SOURCE = VBAT. POWER = ON to upload. Then POWER OFF, unplug, snap onto the muscle sensor.
 
 #include <BLEDevice.h>

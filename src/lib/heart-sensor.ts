@@ -3,7 +3,7 @@ export const HEART_RATE_MEASUREMENT = "heart_rate_measurement";
 export const WIRED_HEART_BAUD = 115200;
 
 export const NO_I2C_HELP =
-  "No I2C. USB is fine. The chip did not answer. If the power pin says VIN or VCC, move that one wire to Uno 5V. Leave the sensor 3.3V pin empty. Never put 5V on a pin labeled only 3.3V. GND → GND. SCL → A5. SDA → A4.";
+  "The heart sensor has not sent a beat yet. Wake the Bluetooth strap, stay close, and tap Connect with Bluetooth again.";
 
 export function bluetoothHeartRateSupported() {
   return typeof navigator !== "undefined" && Boolean(navigator.bluetooth?.requestDevice);
@@ -119,10 +119,10 @@ export function usbSourceConfirmed(proof: UsbHeartProof, now = Date.now()) {
 
 export function usbPortLabel(info?: { usbVendorId?: number }) {
   const vid = info?.usbVendorId;
-  if (vid === 0x2341 || vid === 0x2a03) return "Elegoo Uno R3 (Arduino USB)";
-  if (vid === 0x1a86) return "Elegoo Uno R3 (CH340 USB)";
-  if (vid != null) return `USB board (${vid.toString(16)})`;
-  return "Elegoo Uno R3 (USB)";
+  if (vid === 0x2341 || vid === 0x2a03) return "Elegoo Uno R3";
+  if (vid === 0x1a86) return "HC-05";
+  if (vid != null) return "Bluetooth sensor";
+  return "Bluetooth sensor";
 }
 
 function boardLabel(code: string) {
@@ -336,7 +336,7 @@ export async function connectWiredHeartSensor(
       /* already open from a previous try */
     } else if (name === "NetworkError" || /failed to open/i.test(message)) {
       throw new Error(
-        "Chrome could not open the USB port. Close Arduino Serial Monitor and Arduino IDE, unplug the Elegoo, plug it back in, then tap Connect with USB again. Pick the Arduino / USB Serial Device in the Chrome list."
+        "Chrome could not open the Bluetooth sensor. Wake it, stay close, then tap Connect with Bluetooth again."
       );
     } else {
       throw error;
@@ -353,7 +353,7 @@ export async function connectWiredHeartSensor(
   const reader = port.readable?.getReader();
   if (!reader) {
     await port.close().catch(() => undefined);
-    throw new Error("The USB port opened, but this browser could not read from it.");
+    throw new Error("The Bluetooth sensor opened, but this browser could not read from it.");
   }
 
   const onGone = () => {

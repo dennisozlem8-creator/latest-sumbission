@@ -98,13 +98,9 @@ export function MyoWarePanel({ compact }: MyoWarePanelProps) {
             {flexed
               ? "Yes — ENV is changing with the muscle"
               : myoWareHasSignal(usbProof)
-                ? source === "bluetooth"
-                  ? "Bluetooth yes — flex the muscle under the pads"
-                  : "USB yes — flex the muscle under the pads"
+                ? "Bluetooth yes — flex the muscle under the pads"
                 : usbProof.started
-                  ? source === "bluetooth"
-                    ? "Bluetooth yes — ENV is still near zero"
-                    : "USB yes — ENV is still near zero"
+                  ? "Bluetooth yes — ENV is still near zero"
                   : "Waiting for HELLO MYOWARE"}
           </p>
           <p className="mt-1 text-sm text-body">
@@ -114,7 +110,7 @@ export function MyoWarePanel({ compact }: MyoWarePanelProps) {
                 ? "Pads: MID on the muscle belly, END along the muscle, REF on nearby bone. Then flex."
                 : source === "bluetooth"
                   ? "If ENV stays 0, the Wireless Shield is not snapped on, POWER is off, or the pads are not on skin."
-                  : "If ENV stays 0, the power switch is off, VIN is not on 5V, or ENV is not in A0."}
+                  : "If ENV stays 0, the Wireless Shield is not snapped on, POWER is off, or the pads are not on skin."}
           </p>
           {!compact && (
             <ul className="mt-3 space-y-1 text-sm text-body">

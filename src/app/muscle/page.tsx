@@ -54,8 +54,8 @@ export default function MuscleSensorPage() {
 
       <HelpBlock title="Bluetooth — do this now">
           <ol className="list-decimal space-y-2 pl-5">
-            <li>Leave the Elegoo Uno unplugged. The Wireless Shield has its own USB port and battery.</li>
-            <li>Unstack the Wireless Shield from the muscle sensor. Plug USB into the <strong className="text-foreground">Wireless Shield</strong>.</li>
+            <li>Leave the Elegoo Uno unplugged. The Wireless Shield has its own battery.</li>
+            <li>Unstack the Wireless Shield from the muscle sensor. Plug the programming cable into the <strong className="text-foreground">Wireless Shield</strong> only to load the program.</li>
             <li>
               Set <strong className="text-foreground">POWER SOURCE</strong> to{" "}
               <strong className="text-foreground">VBAT</strong>. Flip <strong className="text-foreground">POWER ON</strong>.
@@ -71,7 +71,7 @@ export default function MuscleSensorPage() {
               </a>
               . File → Open that file. Upload. Wait for Done uploading. Close Serial Monitor.
             </li>
-            <li>Flip POWER OFF. Unplug USB. Snap the shield onto the muscle sensor (GND / REF only fit one way).</li>
+            <li>Flip POWER OFF. Unplug the programming cable. Snap the shield onto the muscle sensor (GND / REF only fit one way).</li>
             <li>
               Pads: <strong className="text-foreground">MID</strong> on the muscle,{" "}
               <strong className="text-foreground">END</strong> along the muscle,{" "}
@@ -85,7 +85,7 @@ export default function MuscleSensorPage() {
           </ol>
           <p className="mt-3">
             Good signs: the LED stays on after Chrome connects, then ENV numbers jump when you flex.
-            Factory firmware waits for USB and will not work with this website — upload the file above.
+            Factory firmware will not work with this website — upload the file above, then connect with Bluetooth.
           </p>
       </HelpBlock>
 
@@ -114,8 +114,8 @@ export default function MuscleSensorPage() {
           <ol className="list-decimal space-y-2 pl-5">
             <li>Use Chrome or Edge on a computer. Not Safari. Not iPhone.</li>
             <li>POWER SOURCE = VBAT. POWER ON. LED should blink until Chrome connects.</li>
-            <li>Stay within a few feet. Do not leave USB plugged into the shield while using Bluetooth.</li>
-            <li>If Mac does not see a port when uploading, install the CH340 USB driver, then pick ESP32 Dev Module.</li>
+            <li>Stay within a few feet. Unplug the programming cable before you tap Connect with Bluetooth.</li>
+            <li>If the computer does not see a port when uploading, install the CH340 driver, then pick ESP32 Dev Module.</li>
           </ol>
         </HelpBlock>
 
@@ -132,7 +132,7 @@ export default function MuscleSensorPage() {
           <ol className="list-decimal space-y-2 pl-5">
             <li>Download wireless-myoware.ino. File → Open that file. Do not paste it into an old sketch.</li>
             <li>Tools → Board → ESP32 Dev Module. Tools → Port → the Wireless Shield (not the Elegoo).</li>
-            <li>Upload. Wait for Done uploading. Close Serial Monitor. POWER OFF. Unplug USB.</li>
+            <li>Upload. Wait for Done uploading. Close Serial Monitor. POWER OFF. Unplug the programming cable.</li>
             <li>Snap onto the sensor, POWER ON, then Connect with Bluetooth.</li>
           </ol>
         </HelpBlock>

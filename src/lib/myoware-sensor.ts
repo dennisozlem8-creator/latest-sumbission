@@ -123,7 +123,7 @@ type ConnectOptions = {
 
 export function requestUsbMyoWarePort() {
   if (!navigator.serial?.requestPort) {
-    throw new Error(usbBlockReason().replace("/heart", "/muscle") || "This browser cannot use USB.");
+    throw new Error(usbBlockReason().replace("/heart", "/muscle") || "This browser cannot use Bluetooth.");
   }
   return navigator.serial.requestPort();
 }
@@ -173,7 +173,7 @@ export async function connectWirelessMyoWare(options: ConnectOptions): Promise<M
       characteristic = await service.getCharacteristic(NORDIC_UART_TX);
     } catch {
       throw new Error(
-        "The Wireless Shield was found, but it is not sending muscle data. Upload wireless-myoware.ino with board ESP32 Dev Module, then POWER OFF, unplug USB, snap it onto the sensor, and POWER ON."
+        "The Wireless Shield was found, but it is not sending muscle data. Upload wireless-myoware.ino with board ESP32 Dev Module, then POWER OFF, unplug the programming cable, snap it onto the sensor, and POWER ON."
       );
     }
   }
@@ -233,7 +233,7 @@ export async function connectWiredMyoWare(
       /* already open */
     } else if (name === "NetworkError" || /failed to open/i.test(message)) {
       throw new Error(
-        "Chrome could not open the USB port. Close Serial Monitor, tap Disconnect on the Heart page if that tab is open, unplug the Elegoo, plug it back in, then tap Connect with USB."
+        "Chrome could not open the muscle sensor. POWER ON, stay close, then tap Connect with Bluetooth and pick MyoWareSensor1."
       );
     } else {
       throw error;
@@ -251,7 +251,7 @@ export async function connectWiredMyoWare(
   const reader = port.readable?.getReader();
   if (!reader) {
     await port.close().catch(() => undefined);
-    throw new Error("The USB port opened, but this browser could not read from it.");
+    throw new Error("The Bluetooth sensor opened, but this browser could not read from it.");
   }
 
   const onGone = () => {

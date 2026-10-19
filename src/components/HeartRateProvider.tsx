@@ -216,14 +216,14 @@ export function HeartRateProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const name = err instanceof DOMException ? err.name : "";
       if (name === "NotFoundError" || name === "AbortError") {
-        setError("No USB device was chosen. Plug in the Arduino, then tap Connect with USB.");
+        setError("No Bluetooth sensor was chosen. Wake the strap, then tap Connect with Bluetooth.");
       } else if (name === "SecurityError") {
-        setError("USB access was blocked. Use Chrome or Edge on a computer, and allow the serial port.");
+        setError("Bluetooth access was blocked. Use Chrome or Edge on a computer, and allow the sensor.");
       } else {
         setError(
           err instanceof Error
             ? err.message
-            : "Could not open the USB heart sensor."
+            : "Could not open the Bluetooth heart sensor."
         );
       }
       setConnected(false);

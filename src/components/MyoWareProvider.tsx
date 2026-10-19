@@ -178,7 +178,7 @@ export function MyoWareProvider({ children }: { children: React.ReactNode }) {
         if (name === "NotFoundError" || name === "AbortError") {
           setError("No Bluetooth device was chosen. Turn the shield on, then tap Connect with Bluetooth.");
         } else if (name === "SecurityError") {
-          setError("USB access was blocked. Use Chrome or Edge on a computer, and allow the serial port.");
+          setError("Bluetooth access was blocked. Use Chrome or Edge on a computer, and allow the sensor.");
         } else {
           setError(err instanceof Error ? err.message : "Could not open the MyoWare Bluetooth connection.");
         }

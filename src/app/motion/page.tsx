@@ -42,7 +42,7 @@ export default function MotionSensorPage() {
       <DashCard className="mt-6 p-5">
         <h2 className="rm-serif text-2xl font-semibold text-[#1b3348]">Connect with Bluetooth</h2>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-[#2f4a60]">
-          <li>Power the Uno from a phone charger. Leave the Mac USB cable unplugged.</li>
+          <li>Power the Uno from a phone charger. Leave it unplugged from the computer.</li>
           <li>The HC-05 light should blink fast. In System Settings → Bluetooth, connect HC-05. PIN 1234.</li>
           <li>In Chrome, tap Connect with Bluetooth and pick the line named HC-05.</li>
           <li>Tip the sensor. The log should show I2C OK, then ANGLE.</li>
@@ -92,7 +92,7 @@ export default function MotionSensorPage() {
           <li>Leave EN, STATE, and KEY empty.</li>
         </ol>
         <p className="mt-3 text-sm leading-6 text-[#2f4a60]">
-          A USB cable is only for loading the program once. Unplug the wires on pins 0 and 1, upload bluetooth-mpu.ino with the board set to Arduino Uno, then plug those two wires back. Unplug the Uno from the Mac and power it from a phone charger. Pair the HC-05. The PIN is 1234. Then tap Connect with Bluetooth and pick the port named HC-05.
+          The computer cable is only for loading the program once. Unplug the wires on pins 0 and 1, upload bluetooth-mpu.ino with the board set to Arduino Uno, then plug those two wires back. Unplug the Uno from the computer and power it from a phone charger. Pair the HC-05. The PIN is 1234. Then tap Connect with Bluetooth and pick the port named HC-05.
         </p>
         <a href="/firmware/bluetooth-mpu" className="rm-btn rm-btn-ghost mt-4 inline-flex w-full justify-center">
           Download bluetooth-mpu.ino

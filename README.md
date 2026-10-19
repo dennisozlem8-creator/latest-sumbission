@@ -62,10 +62,10 @@ The motion chip stays on the Elegoo Uno. An HC-05 sends the same angle lines ove
 
 Do not use the Elegoo Uno for this. The Wireless Shield is its own ESP32 board.
 
-1. USB into the **Wireless Shield**. POWER SOURCE = VBAT. POWER ON.
+1. Programming cable into the **Wireless Shield**, only to load the program. POWER SOURCE = VBAT. POWER ON.
 2. Arduino IDE: install the **esp32** board package. Tools → Board → **ESP32 Dev Module**.
 3. Download `wireless-myoware.ino` from the Muscle page. File → Open. Upload. Close Serial Monitor.
-4. POWER OFF. Unplug USB. Snap the shield onto the muscle sensor. Pads: MID / END / REF.
+4. POWER OFF. Unplug the programming cable. Snap the shield onto the muscle sensor. Pads: MID / END / REF.
 5. POWER ON. Chrome → `/muscle` → **Connect with Bluetooth** → MyoWareSensor1. Flex.
 
 ## Heart sensor
