@@ -1,4 +1,11 @@
-import { EXERCISE_OPTIONS, type GoniometerMeasurement, type Point } from "./goniometer";
+import {
+  EXERCISE_OPTIONS,
+  measuredJointFromLabel,
+  pointLabelsForJoint,
+  type GoniometerMeasurement,
+  type MeasuredJoint,
+  type Point,
+} from "./goniometer";
 import { countAngleReps } from "./rep-counter";
 import { summarizeMovement, type MovementSample } from "./pose-goniometer";
 
@@ -193,6 +200,138 @@ function progressNoteFor(history: GoniometerMeasurement[], peak: number) {
   return `Peak is holding near ${last.angle}°. That is useful. Improve control before chasing more degrees.`;
 }
 
+const REGION_CUES: Record<Exclude<MeasuredJoint, "knee">, string[]> = {
+  ankle: [
+    "Turn sideways so the camera sees the knee, ankle, and toes.",
+    "Move the foot. Keep the knee quiet unless the exercise asks it to bend.",
+    "Stop if the motion is sharp. A smaller, slower bend still counts.",
+  ],
+  wrist: [
+    "Turn sideways so the camera sees the shoulder, elbow, and wrist.",
+    "Bend and straighten at the wrist. Keep the elbow from swinging through the motion.",
+    "Stop if the motion is sharp. Save the angle you can hold without forcing it.",
+  ],
+  trunk: [
+    "Turn sideways so the camera sees the shoulder, hip, and knee.",
+    "Hinge from the hips. Keep the knees soft and the motion slow.",
+    "Stop if pain is sharp or travels down the leg. A smaller bend still counts.",
+  ],
+};
+
+function regionName(kind: MeasuredJoint) {
+  if (kind === "trunk") return "lower back";
+  return kind;
+}
+
+function pointPhrase(kind: MeasuredJoint) {
+  const labels = pointLabelsForJoint(kind);
+  return `${labels.hip.toLowerCase()}, ${labels.knee.toLowerCase()}, and ${labels.ankle.toLowerCase()}`;
+}
+
+function coachRegionMovement(
+  samples: MovementSample[],
+  selectedExercise: string,
+  joint: string,
+  history: GoniometerMeasurement[]
+): MovementCoachReport | null {
+  const analyzed = smoothSamples(samples);
+  const summary = summarizeMovement(analyzed);
+  if (!summary || analyzed.length < 4) return null;
+  const kind = measuredJointFromLabel(joint);
+  if (kind === "knee") return null;
+  const name = regionName(kind);
+  const points = pointPhrase(kind);
+  const side = joint.toLowerCase().includes("left") ? "left" : "right";
+  const quality = trackingQuality(analyzed, summary.duration);
+  const findings: MovementFinding[] = [];
+  const unusualTimes: number[] = [];
+  const angles = analyzed.map((sample) => sample.angle);
+  const vels = velocitySeries(analyzed);
+
+  findings.push(
+    quality === "poor"
+      ? {
+          id: "tracking",
+          severity: "watch",
+          title: `The camera lost the ${name} at times`,
+          detail: `The ${points} dropped out of view. Step back, stay sideways, and keep those three points in the frame.`,
+        }
+      : {
+          id: "tracking",
+          severity: "ok",
+          title: "The recorded part stayed in view",
+          detail: `The ${side} ${points} were visible enough to measure this clip.`,
+        }
+  );
+
+  if (summary.range < 12) {
+    findings.push({
+      id: "little-motion",
+      severity: "watch",
+      title: `Very little ${name} motion in this clip`,
+      detail: `The angle only moved about ${summary.range}°. That can be a still pose, a stiff session, or the camera missing the bend.`,
+    });
+  }
+
+  const jerks = vels.filter((row) => Math.abs(row.vel) > 220 || Math.abs(row.step) > 28);
+  if (jerks.length >= 2) {
+    unusualTimes.push(...jerks.slice(0, 4).map((row) => row.time));
+    findings.push({
+      id: "jerky",
+      severity: jerks.length >= 4 ? "unusual" : "watch",
+      title: "The motion looks jumpy",
+      detail: `The angle jumped suddenly around ${jerks[0].time.toFixed(1)}s. Slow the middle of the movement.`,
+      timeSec: jerks[0].time,
+    });
+  }
+
+  return {
+    detectedExercise: selectedExercise,
+    matchSelected: true,
+    confidence: quality === "good" ? "medium" : "low",
+    headline: `This clip measures the ${side} ${name}. Peak ${summary.peak}°, range ${summary.range}°.`,
+    findings,
+    feedback: REGION_CUES[kind],
+    unusualTimes: [...new Set(unusualTimes)].slice(0, 6),
+    trackingQuality: quality,
+    formScore: formScoreFor(findings, quality),
+    reps: countAngleReps(angles),
+    progressNote: progressNoteFor(history, summary.peak),
+  };
+}
+
+function coachRegionPhoto(
+  angle: number,
+  selectedExercise: string,
+  joint: string
+): MovementCoachReport | null {
+  const kind = measuredJointFromLabel(joint);
+  if (kind === "knee") return null;
+  const name = regionName(kind);
+  const points = pointPhrase(kind);
+  const side = joint.toLowerCase().includes("left") ? "left" : "right";
+  return {
+    detectedExercise: selectedExercise,
+    matchSelected: true,
+    confidence: "medium",
+    headline: `Photo of the ${side} ${name} at ${angle}°. Record a short video if you want the motion, not just this still angle.`,
+    findings: [
+      {
+        id: "photo-angle",
+        severity: "ok",
+        title: `Still-frame ${name} angle is ${angle}°`,
+        detail: `Measured at the middle of the ${points}. A video shows whether the motion into and out of this angle is smooth.`,
+      },
+    ],
+    feedback: REGION_CUES[kind],
+    unusualTimes: [],
+    trackingQuality: "good",
+    formScore: 90,
+    reps: 0,
+    progressNote: null,
+  };
+}
+
 export function coachMovement(
   samples: MovementSample[],
   selectedExercise: string,
@@ -200,6 +339,9 @@ export function coachMovement(
   goal = 100,
   history: GoniometerMeasurement[] = []
 ): MovementCoachReport | null {
+  if (measuredJointFromLabel(joint) !== "knee") {
+    return coachRegionMovement(samples, selectedExercise, joint, history);
+  }
   const analyzed = smoothSamples(samples);
   const summary = summarizeMovement(analyzed);
   if (!summary || analyzed.length < 4) return null;
@@ -441,6 +583,8 @@ export function coachPhotoPose(
   selectedExercise: string,
   joint: string
 ): MovementCoachReport {
+  const region = coachRegionPhoto(angle, selectedExercise, joint);
+  if (region) return region;
   const exercise = (
     EXERCISE_OPTIONS.includes(selectedExercise as ExerciseId)
       ? selectedExercise

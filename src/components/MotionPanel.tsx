@@ -221,7 +221,7 @@ export function PhotoMeasureCard() {
         <span className="text-sm font-semibold text-[#2f4a60]">Camera</span>
         <span className="mt-0.5 font-semibold text-foreground">Phone or laptop camera</span>
         <span className="mt-1 text-sm text-muted">
-          Side view. The app marks hip, knee, and ankle — or you tap the three points.
+          Side view. Knee, ankle, lower back, or wrist — the same joints as the sensors.
         </span>
         <span className="rm-btn rm-btn-brand mt-3 inline-flex h-10 w-fit min-h-0 rounded-full px-5 text-sm">
           Open the camera

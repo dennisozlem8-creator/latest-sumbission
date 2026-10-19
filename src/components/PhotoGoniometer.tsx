@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  EXERCISE_OPTIONS,
   JOINT_OPTIONS,
-  LANDMARK_LABELS,
   LANDMARK_ORDER,
+  exercisesForJoint,
+  measuredJointFromLabel,
+  pointLabelsForJoint,
   type LandmarkId,
+  type MeasuredJoint,
   type Point,
   deleteMeasurement,
   kneeAngleDegrees,
@@ -33,7 +35,26 @@ import { GoniometerProgressChart } from "./GoniometerProgressChart";
 import { MovementChart } from "./MovementChart";
 import { MovementCoachCard } from "./MovementCoachCard";
 import { useClinicLocale } from "./useClinicLocale";
-import { t, tf } from "@/lib/i18n";
+import { t, tf, type CopyKey, type Locale } from "@/lib/i18n";
+
+const POINT_COPY: Record<string, CopyKey> = {
+  Hip: "hip",
+  Knee: "knee",
+  Ankle: "ankle",
+  Shoulder: "shoulder",
+  Elbow: "elbow",
+  Wrist: "wrist",
+  Toe: "toe",
+};
+
+function labelsFor(kind: MeasuredJoint, locale: Locale): Record<LandmarkId, string> {
+  const names = pointLabelsForJoint(kind);
+  return {
+    hip: t(POINT_COPY[names.hip] ?? "hip", locale),
+    knee: t(POINT_COPY[names.knee] ?? "knee", locale),
+    ankle: t(POINT_COPY[names.ankle] ?? "ankle", locale),
+  };
+}
 
 type Step = "upload" | "mark";
 
@@ -297,6 +318,7 @@ export function PhotoGoniometer({
   const recordStartedRef = useRef(0);
   const recordingRef = useRef(false);
   const preferLeftRef = useRef(false);
+  const jointRef = useRef(JOINT_OPTIONS[0]);
   const liveAnglesRef = useRef<number[]>([]);
   const [overlay, setOverlay] = useState({ left: 0, top: 0, width: 100, height: 100 });
   const [step, setStep] = useState<Step>("upload");
@@ -312,7 +334,7 @@ export function PhotoGoniometer({
   const [points, setPoints] = useState<Partial<Record<LandmarkId, Point>>>({});
   const [samples, setSamples] = useState<MovementSample[]>([]);
   const [liveAngle, setLiveAngle] = useState<number | null>(null);
-  const [exercise, setExercise] = useState(EXERCISE_OPTIONS[0]);
+  const [exercise, setExercise] = useState(exercisesForJoint("knee")[0]);
   const [joint, setJoint] = useState(JOINT_OPTIONS[0]);
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
@@ -324,7 +346,12 @@ export function PhotoGoniometer({
   const analysisRef = useRef<HTMLElement>(null);
 
   const preferLeft = joint.toLowerCase().includes("left");
+  const poseJoint = measuredJointFromLabel(joint);
+  const exerciseOptions = exercisesForJoint(poseJoint);
+  const landmarkLabels = labelsFor(poseJoint, locale);
+  const pointList = `${landmarkLabels.hip}, ${landmarkLabels.knee}, and ${landmarkLabels.ankle}`;
   preferLeftRef.current = preferLeft;
+  jointRef.current = joint;
   videoUrlRef.current = videoUrl;
   const movement = useMemo(() => summarizeMovement(samples), [samples]);
   const pending = nextLandmark(points);
@@ -488,7 +515,8 @@ export function PhotoGoniometer({
           video,
           performance.now(),
           preferLeftRef.current,
-          Number(elapsed.toFixed(2))
+          Number(elapsed.toFixed(2)),
+          measuredJointFromLabel(jointRef.current)
         );
         const stable = sample
           ? { ...sample, angle: stableAngle(liveAnglesRef.current, sample.angle) }
@@ -591,12 +619,12 @@ export function PhotoGoniometer({
     }
     try {
       const found = clip
-        ? await analyzeVideoElement(clip, preferLeft, setAnalyzePct)
-        : await analyzeVideoUrl(url, preferLeft, setAnalyzePct);
+        ? await analyzeVideoElement(clip, preferLeft, setAnalyzePct, poseJoint)
+        : await analyzeVideoUrl(url, preferLeft, setAnalyzePct, poseJoint);
       const result = found.length >= 4 ? found : refineMovementSamples(liveSamples);
       if (result.length < 4) {
         setCameraError(
-          "Could not see the hip, knee, and ankle clearly. Record from the side, with the whole leg in view, then tap Analyze movement again."
+          `Could not see the ${pointList.toLowerCase()} clearly. Record from the side, with those three points in view, then tap Analyze movement again.`
         );
         return;
       }
@@ -627,11 +655,11 @@ export function PhotoGoniometer({
     setSaved(false);
     setSaveMessage("");
     try {
-      const found = await analyzeImageUrl(url, preferLeft);
+      const found = await analyzeImageUrl(url, preferLeft, poseJoint);
       if (!found) {
         setPoints({});
         setCameraError(
-          "Could not see the hip, knee, and ankle in that photo. Mark the points, or take another side-view shot."
+          `Could not see the ${pointList.toLowerCase()} in that photo. Mark the points, or take another side-view shot.`
         );
         return;
       }
@@ -792,6 +820,17 @@ export function PhotoGoniometer({
     [rows, joint]
   );
 
+  function chooseJoint(next: string) {
+    setJoint(next);
+    setPoints({});
+    setSamples([]);
+    samplesRef.current = [];
+    liveAnglesRef.current = [];
+    setLiveAngle(null);
+    const options = exercisesForJoint(measuredJointFromLabel(next));
+    setExercise((current) => (options.includes(current) ? current : options[0]));
+  }
+
   return (
     <div className="space-y-6">
       {step === "upload" && (
@@ -804,7 +843,7 @@ export function PhotoGoniometer({
                 onChange={(e) => setExercise(e.target.value)}
                 className="mt-2 w-full rounded-xl border border-[var(--border)] bg-background px-3 py-3"
               >
-                {EXERCISE_OPTIONS.map((option) => (
+                {exerciseOptions.map((option) => (
                   <option key={option}>{option}</option>
                 ))}
               </select>
@@ -813,7 +852,7 @@ export function PhotoGoniometer({
               <span className="rm-label">{t("joint", locale)}</span>
               <select
                 value={joint}
-                onChange={(e) => setJoint(e.target.value)}
+                onChange={(e) => chooseJoint(e.target.value)}
                 className="mt-2 w-full rounded-xl border border-[var(--border)] bg-background px-3 py-3"
               >
                 {JOINT_OPTIONS.map((option) => (
@@ -822,6 +861,9 @@ export function PhotoGoniometer({
               </select>
             </label>
           </div>
+          <p className="mt-3 text-sm text-muted">
+            Side view. The camera marks {pointList.toLowerCase()} — or you tap those three points.
+          </p>
 
           <div className="relative mt-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-black">
             <video
@@ -865,7 +907,7 @@ export function PhotoGoniometer({
                 </div>
                 {trackerReady && (
                   <p className="text-center text-xs text-muted">
-                    Movement tracker ready — lines appear when the leg is in view
+                    Movement tracker ready — lines appear when {pointList.toLowerCase()} are in view
                   </p>
                 )}
               </div>
@@ -874,7 +916,7 @@ export function PhotoGoniometer({
                 src={photoUrl}
                 points={points}
                 angle={photoAngle}
-                labels={{ hip: t("hip", locale), knee: t("knee", locale), ankle: t("ankle", locale) }}
+                labels={landmarkLabels}
                 measuring={photoAnalyzing}
                 measuringLabel={t("measuringPhoto", locale)}
                 imgClassName="max-h-80 w-full bg-background object-contain"
@@ -890,7 +932,7 @@ export function PhotoGoniometer({
               />
             ) : videoUrl && analyzing ? (
               <div className="flex h-40 flex-col items-center justify-center gap-2 bg-background px-6 text-sm text-muted">
-                <p>Watching the video and measuring the knee…</p>
+                <p>Watching the video and measuring the {joint.toLowerCase()}…</p>
                 <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-surface-elevated">
                   <div className="h-full bg-brand" style={{ width: `${analyzePct}%` }} />
                 </div>
@@ -907,7 +949,7 @@ export function PhotoGoniometer({
           )}
 
           {analyzing && liveCamera && (
-            <p className="mt-3 text-sm text-muted">Watching the video and measuring the knee… {analyzePct}%</p>
+            <p className="mt-3 text-sm text-muted">Watching the video and measuring the {joint.toLowerCase()}… {analyzePct}%</p>
           )}
 
           <div className="mt-5 flex flex-col gap-3">
@@ -981,7 +1023,7 @@ export function PhotoGoniometer({
             <div className="mt-4 rounded-2xl border border-[var(--border)] bg-background px-4 py-4">
               <p className="font-semibold">Analyzing your video… {analyzePct}%</p>
               <p className="mt-1 text-sm text-muted">
-                Measuring the knee and checking the motion for form issues and unusual spots.
+                Measuring the {joint.toLowerCase()} and checking the motion.
               </p>
               <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-elevated">
                 <div className="h-full bg-brand transition-[width]" style={{ width: `${analyzePct}%` }} />
@@ -1046,7 +1088,7 @@ export function PhotoGoniometer({
           <h2 className="mt-1 text-xl font-bold">{t("markPoints", locale)}</h2>
           <p className="mt-2 rm-body">
             {pending
-              ? tf("tapNext", locale, { landmark: t(pending, locale).toLowerCase() })
+              ? tf("tapNext", locale, { landmark: landmarkLabels[pending].toLowerCase() })
               : t("allThreeSet", locale)}
           </p>
 
@@ -1062,7 +1104,7 @@ export function PhotoGoniometer({
                       : "bg-background text-muted"
                 }`}
               >
-                {LANDMARK_LABELS[id]}
+                {landmarkLabels[id]}
               </li>
             ))}
           </ol>
@@ -1075,7 +1117,7 @@ export function PhotoGoniometer({
             <img
               ref={imgRef}
               src={photoUrl}
-              alt="Mark hip, knee, and ankle"
+              alt={`Mark ${pointList.toLowerCase()}`}
               className="max-h-[28rem] w-full cursor-crosshair object-contain"
               onClick={handleClick}
               onLoad={syncOverlay}
@@ -1181,7 +1223,7 @@ export function PhotoGoniometer({
                     src={photoUrl}
                     points={points}
                     angle={photoAngle}
-                    labels={{ hip: t("hip", locale), knee: t("knee", locale), ankle: t("ankle", locale) }}
+                    labels={landmarkLabels}
                   />
                 </div>
               )}
@@ -1194,7 +1236,7 @@ export function PhotoGoniometer({
                   goal={goal}
                 />
               )}
-              {metaFields(exercise, setExercise, joint, setJoint, note, setNote)}
+              {metaFields(exercise, setExercise, exerciseOptions, joint, chooseJoint, note, setNote)}
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <button type="button" className="rm-btn rm-btn-ghost flex-1" onClick={() => setStep("mark")}>
                   Edit points
@@ -1244,7 +1286,7 @@ export function PhotoGoniometer({
                   goal={goal}
                 />
               )}
-              {photoAngle == null && metaFields(exercise, setExercise, joint, setJoint, note, setNote)}
+              {photoAngle == null && metaFields(exercise, setExercise, exerciseOptions, joint, chooseJoint, note, setNote)}
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <button type="button" className="rm-btn rm-btn-ghost flex-1" onClick={resetCapture}>
                   Record again
@@ -1326,6 +1368,7 @@ export function PhotoGoniometer({
 function metaFields(
   exercise: string,
   setExercise: (value: string) => void,
+  exerciseOptions: string[],
   joint: string,
   setJoint: (value: string) => void,
   note: string,
@@ -1341,7 +1384,7 @@ function metaFields(
             onChange={(e) => setExercise(e.target.value)}
             className="mt-2 w-full rounded-xl border border-[var(--border)] bg-background px-3 py-3"
           >
-            {EXERCISE_OPTIONS.map((option) => (
+            {exerciseOptions.map((option) => (
               <option key={option}>{option}</option>
             ))}
           </select>

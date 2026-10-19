@@ -1,4 +1,4 @@
-import { kneeAngleDegrees, type Point } from "./goniometer";
+import { kneeAngleDegrees, pointLabelsForJoint, type MeasuredJoint, type Point } from "./goniometer";
 
 export type MovementSample = {
   time: number;
@@ -126,7 +126,19 @@ function imageDistance(a: PoseLandmark, b: PoseLandmark) {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-function limbScore(landmarks: PoseLandmark[], ids: [number, number, number], strict: boolean) {
+function segmentRatioLimits(joint: KidsJoint, strict: boolean): [number, number] {
+  if (joint === "ankle") return strict ? [0.28, 3.6] : [0.18, 4.5];
+  if (joint === "wrist") return strict ? [0.35, 2.8] : [0.2, 3.8];
+  if (joint === "trunk") return strict ? [0.35, 2.8] : [0.2, 3.8];
+  return strict ? [0.4, 2.5] : [0.22, 3.6];
+}
+
+function limbScore(
+  landmarks: PoseLandmark[],
+  ids: [number, number, number],
+  strict: boolean,
+  joint: KidsJoint = "knee"
+) {
   const a = landmarks[ids[0]];
   const b = landmarks[ids[1]];
   const c = landmarks[ids[2]];
@@ -138,12 +150,19 @@ function limbScore(landmarks: PoseLandmark[], ids: [number, number, number], str
   const shank = imageDistance(b, c);
   if (thigh < 0.015 || shank < 0.015) return -1;
   const ratio = thigh / shank;
-  if (strict && (ratio < 0.4 || ratio > 2.5)) return -1;
-  if (!strict && (ratio < 0.22 || ratio > 3.6)) return -1;
+  const [minRatio, maxRatio] = segmentRatioLimits(joint, strict);
+  if (ratio < minRatio || ratio > maxRatio) return -1;
   return vis * 3 + Math.min(thigh + shank, 1.2);
 }
 
-function spatialAngle(a: PoseLandmark, b: PoseLandmark, c: PoseLandmark) {
+function spatialLimits(joint: KidsJoint) {
+  if (joint === "ankle") return { min: 0.08, max: 0.7, ratioMin: 0.28, ratioMax: 3.4 };
+  if (joint === "wrist") return { min: 0.1, max: 0.55, ratioMin: 0.4, ratioMax: 2.6 };
+  if (joint === "trunk") return { min: 0.18, max: 0.95, ratioMin: 0.4, ratioMax: 2.4 };
+  return { min: 0.18, max: 0.85, ratioMin: 0.45, ratioMax: 2.2 };
+}
+
+function spatialAngle(a: PoseLandmark, b: PoseLandmark, c: PoseLandmark, joint: KidsJoint = "knee") {
   const ax = a.x - b.x;
   const ay = a.y - b.y;
   const az = (a.z ?? 0) - (b.z ?? 0);
@@ -153,9 +172,10 @@ function spatialAngle(a: PoseLandmark, b: PoseLandmark, c: PoseLandmark) {
   const magA = Math.hypot(ax, ay, az);
   const magB = Math.hypot(bx, by, bz);
   if (magA < 0.05 || magB < 0.05) return null;
+  const limits = spatialLimits(joint);
   const ratio = magA / magB;
-  if (ratio < 0.45 || ratio > 2.2) return null;
-  if (magA > 0.85 || magB > 0.85 || magA < 0.18 || magB < 0.18) return null;
+  if (ratio < limits.ratioMin || ratio > limits.ratioMax) return null;
+  if (magA > limits.max || magB > limits.max || magA < limits.min || magB < limits.min) return null;
   const cos = Math.min(1, Math.max(-1, (ax * bx + ay * by + az * bz) / (magA * magB)));
   return Math.round((Math.acos(cos) * 180) / Math.PI);
 }
@@ -172,14 +192,14 @@ export function sampleFromPose(
   const triple = JOINT_TRIPLES[joint] ?? JOINT_TRIPLES.knee;
   const preferred = preferLeft ? triple.left : triple.right;
   const otherIds = preferLeft ? triple.right : triple.left;
-  const preferredScore = limbScore(landmarks, preferred, true);
-  const otherScore = limbScore(landmarks, otherIds, true);
+  const preferredScore = limbScore(landmarks, preferred, true, joint);
+  const otherScore = limbScore(landmarks, otherIds, true, joint);
   let pick = preferred;
   if (preferredScore < 0 && otherScore >= 0) pick = otherIds;
   else if (preferredScore >= 0 && otherScore > preferredScore + 1.25 && preferredScore < 1.4) pick = otherIds;
   else if (preferredScore < 0 && otherScore < 0) {
-    const loosePreferred = limbScore(landmarks, preferred, false);
-    const looseOther = limbScore(landmarks, otherIds, false);
+    const loosePreferred = limbScore(landmarks, preferred, false, joint);
+    const looseOther = limbScore(landmarks, otherIds, false, joint);
     if (loosePreferred < 0 && looseOther < 0) return null;
     pick = loosePreferred >= looseOther ? preferred : otherIds;
   }
@@ -195,10 +215,11 @@ export function sampleFromPose(
   const worldA = worldLandmarks?.[pick[0]];
   const worldB = worldLandmarks?.[pick[1]];
   const worldC = worldLandmarks?.[pick[2]];
-  const depth = worldA && worldB && worldC ? spatialAngle(worldA, worldB, worldC) : null;
+  const depth = worldA && worldB && worldC ? spatialAngle(worldA, worldB, worldC, joint) : null;
   const sideOn = imageDistance(a, b) + imageDistance(b, c) >= 0.22;
   const angle = depth == null || (sideOn && Math.abs(depth - flat) > 25) ? flat : depth;
-  if (angle < 12 || angle > 178) return null;
+  if (angle < 12) return null;
+  if (joint === "knee" ? angle > 178 : angle > 180) return null;
   const other = pick === preferred ? otherIds : preferred;
   const leftSide = pick === triple.left;
   const sameShoulder = leftSide ? landmarks[11] : landmarks[12];
@@ -271,7 +292,8 @@ function prepareVideo(video: HTMLVideoElement) {
 export async function analyzeVideoElement(
   video: HTMLVideoElement,
   preferLeft: boolean,
-  onProgress?: (pct: number) => void
+  onProgress?: (pct: number) => void,
+  joint: KidsJoint = "knee"
 ): Promise<MovementSample[]> {
   prepareVideo(video);
   // Start playback in the same tap when possible. Waiting for the model first
@@ -292,7 +314,8 @@ export async function analyzeVideoElement(
         video,
         stamp,
         preferLeft,
-        Number(time.toFixed(2))
+        Number(time.toFixed(2)),
+        joint
       );
       if (sample) samples.push(sample);
     } catch {
@@ -376,7 +399,8 @@ export async function analyzeVideoElement(
 export async function analyzeVideoUrl(
   url: string,
   preferLeft: boolean,
-  onProgress?: (pct: number) => void
+  onProgress?: (pct: number) => void,
+  joint: KidsJoint = "knee"
 ): Promise<MovementSample[]> {
   const video = document.createElement("video");
   prepareVideo(video);
@@ -385,7 +409,7 @@ export async function analyzeVideoUrl(
     "position:fixed;left:0;top:0;width:240px;height:180px;opacity:0.01;pointer-events:none;z-index:-1";
   document.body.appendChild(video);
   try {
-    return await analyzeVideoElement(video, preferLeft, onProgress);
+    return await analyzeVideoElement(video, preferLeft, onProgress, joint);
   } finally {
     video.removeAttribute("src");
     video.load();
@@ -400,7 +424,7 @@ export type PhotoPoseResult = {
   ankle: Point;
 };
 
-export type KidsJoint = "knee" | "ankle" | "wrist" | "trunk";
+export type KidsJoint = MeasuredJoint;
 
 export function kidsJointForArea(areaId: string): KidsJoint {
   if (areaId === "ankle") return "ankle";
@@ -410,10 +434,8 @@ export function kidsJointForArea(areaId: string): KidsJoint {
 }
 
 export function kidsJointLabels(joint: KidsJoint): [string, string, string] {
-  if (joint === "ankle") return ["Knee", "Ankle", "Toe"];
-  if (joint === "wrist") return ["Shoulder", "Elbow", "Wrist"];
-  if (joint === "trunk") return ["Shoulder", "Hip", "Knee"];
-  return ["Hip", "Knee", "Ankle"];
+  const labels = pointLabelsForJoint(joint);
+  return [labels.hip, labels.knee, labels.ankle];
 }
 
 const JOINT_TRIPLES: Record<KidsJoint, { left: [number, number, number]; right: [number, number, number] }> = {
@@ -455,7 +477,8 @@ export async function orientedImageUrl(file: Blob) {
 
 export async function analyzeImageUrl(
   imageUrl: string,
-  preferLeft: boolean
+  preferLeft: boolean,
+  joint: KidsJoint = "knee"
 ): Promise<PhotoPoseResult | null> {
   const landmarker = await createImageLandmarker();
   try {
@@ -469,7 +492,7 @@ export async function analyzeImageUrl(
     ctx.drawImage(bitmap, 0, 0);
     bitmap.close();
     const result = landmarker.detect(canvas);
-    const sample = sampleFromPose(result.landmarks?.[0], preferLeft, 0, "knee", result.worldLandmarks?.[0]);
+    const sample = sampleFromPose(result.landmarks?.[0], preferLeft, 0, joint, result.worldLandmarks?.[0]);
     if (!sample) return null;
     return {
       angle: sample.angle,

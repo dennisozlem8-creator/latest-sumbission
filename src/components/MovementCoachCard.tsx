@@ -112,7 +112,7 @@ export function MovementCoachCard({
       </div>
 
       <p className="mt-4 text-xs text-muted">
-        On-device pose AI reads the hip, knee, and ankle. This is coaching for your home program,
+        On-device pose AI reads the three points for the joint you picked. This is coaching for your home program,
         not a diagnosis.
       </p>
     </div>
