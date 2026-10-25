@@ -48,6 +48,10 @@ export default function ChartsPage() {
         action={<ReportActions locale={locale} />}
       />
 
+      <Link href="/dashboard" className="rm-btn rm-btn-ghost mt-6 w-full rounded-full sm:w-auto">
+        {t("dashboard", locale)}
+      </Link>
+
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <DashStat label={t("savedReadings", locale)} value={ordered.length} hint={t("photoMotionMuscle", locale)} />
         <DashStat label={t("thisWeek", locale)} value={week.filter((d) => d.active).length} hint={t("activeDays", locale)} />

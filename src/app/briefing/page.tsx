@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { DashCard, DashIntro, DashLoop, DashRing, DashShell, DashStat } from "@/components/clinic/DashKit";
 import { useAuth } from "@/components/AuthProvider";
 import { DemoBanner } from "@/components/DemoBanner";
@@ -18,7 +17,6 @@ import { DailyPath } from "@/components/DailyPath";
 
 export default function BriefingPage() {
   const { user } = useAuth();
-  const router = useRouter();
 
   if (!user) return null;
 
@@ -51,7 +49,13 @@ export default function BriefingPage() {
               {tf("checkInComplete", locale, { summary: checkInSummary })}
             </p>
           ) : null}
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col gap-2 sm:max-w-md">
+            <Link href="/pain-check" className="rm-btn rm-btn-brand h-14 w-full rounded-full text-base">
+              {t("startSession", locale)}
+            </Link>
+            <Link href="/goniometer" className="rm-btn rm-btn-ghost h-12 w-full rounded-full">
+              {t("navMeasure", locale)}
+            </Link>
             <ReportActions locale={locale} />
           </div>
         </div>
@@ -123,14 +127,7 @@ export default function BriefingPage() {
         </ol>
       </DashCard>
 
-      <button
-        type="button"
-        onClick={() => router.push("/pain-check")}
-        className="rm-btn rm-btn-brand mt-6 h-12 w-full rounded-full"
-      >
-        {t("startSession", locale)}
-      </button>
-      <p className="mt-4 text-center">
+      <p className="mt-6 text-center">
         <Link href="/library" className="text-sm font-semibold text-[#1b3348]">
           {t("viewLibrary", locale)} →
         </Link>

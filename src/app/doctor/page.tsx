@@ -65,12 +65,12 @@ export default function DoctorDashboardPage() {
         title="Your patients"
         text="Review saved clips, form flags, and whether range is improving. Nothing here is invented."
         action={
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Link href="/doctor/weekly" className="rm-btn h-11 min-h-0 rounded-full bg-[#2a332c] px-6 text-[#f7f3ea] hover:bg-[#3a4a3c]">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Link href="/doctor/weekly" className="rm-btn h-12 min-h-0 rounded-full bg-[#2a332c] px-6 text-[#f7f3ea] hover:bg-[#3a4a3c]">
               This week
             </Link>
-            <Link href="/pt-update" className="rm-btn rm-btn-ghost h-11 min-h-0 rounded-full px-6">
-              Push exercise update
+            <Link href="/pt-update" className="rm-btn rm-btn-ghost h-12 min-h-0 rounded-full px-6">
+              Update plan
             </Link>
           </div>
         }
@@ -89,8 +89,8 @@ export default function DoctorDashboardPage() {
               <h2 className="rm-serif text-2xl font-semibold text-[#1b3348]">This week</h2>
               <p className="mt-1 text-sm text-[#2f4a60]">{weekly[0].rangeLabel} · for doctors and caregivers on this account</p>
             </div>
-            <Link href="/doctor/weekly" className="text-sm font-semibold text-[#1b3348]">
-              Open →
+            <Link href="/doctor/weekly" className="rm-btn h-11 min-h-0 shrink-0 rounded-full bg-[#2a332c] px-5 text-[#f7f3ea] hover:bg-[#3a4a3c]">
+              This week
             </Link>
           </div>
           <div className="divide-y divide-[#e8f3fb]">
@@ -153,9 +153,9 @@ export default function DoctorDashboardPage() {
                     </div>
                     <Link
                       href={`/doctor/patient?email=${encodeURIComponent(patient.email)}`}
-                      className="mt-4 inline-flex text-sm font-semibold text-[#1b3348]"
+                      className="rm-btn mt-4 inline-flex h-11 min-h-0 rounded-full bg-[#2a332c] px-5 text-[#f7f3ea] hover:bg-[#3a4a3c]"
                     >
-                      Review movement →
+                      {t("openChart", locale)}
                     </Link>
                   </div>
                   <div className="rounded-[1.15rem] bg-[#f7fbfe] p-3">

@@ -22,7 +22,7 @@ export function DashShell({
   const { user } = useAuth();
   const care = caregiver || isCareTeam(user?.role);
   return (
-    <div className={`min-h-full overflow-x-hidden ${nav ? "pb-36 sm:pb-32" : "pb-12"} ${care ? "rm-glow-caregiver" : "rm-glow-patient"}`}>
+    <div className={`min-h-full overflow-x-hidden ${nav ? "pb-48 sm:pb-44" : "pb-12"} ${care ? "rm-glow-caregiver" : "rm-glow-patient"}`}>
       <Header linkHome variant={care ? "caregiver" : "patient"} />
       <main className={`mx-auto w-full px-4 pb-10 sm:px-6 ${wide ? "max-w-6xl" : "max-w-2xl"}`}>{children}</main>
       {nav ? <BottomNav /> : null}

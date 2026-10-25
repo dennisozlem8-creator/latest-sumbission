@@ -57,9 +57,15 @@ export default function DashboardPage() {
         title={tf("todaysPlan", locale, { exercise: todayExercise })}
         text={t("dashboardText", locale)}
         action={
-          <div className="flex flex-col gap-2 sm:items-end">
-            <Link href="/briefing" className="rm-btn rm-btn-brand h-11 min-h-0 rounded-full px-6">
-              {t("startBriefing", locale)}
+          <div className="flex w-full flex-col gap-2 sm:max-w-xs">
+            <Link href="/pain-check" className="rm-btn rm-btn-brand h-14 min-h-0 w-full rounded-full text-base">
+              {t("startSession", locale)}
+            </Link>
+            <Link href="/goniometer" className="rm-btn rm-btn-ghost h-12 min-h-0 w-full rounded-full">
+              {t("navMeasure", locale)}
+            </Link>
+            <Link href="/briefing" className="rm-btn rm-btn-ghost h-12 min-h-0 w-full rounded-full">
+              {t("goToBriefing", locale)}
             </Link>
             <ReportActions locale={locale} />
           </div>

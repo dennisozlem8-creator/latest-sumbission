@@ -52,12 +52,12 @@ export function WeeklyUpdateCard({
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <Link
           href={`/doctor/patient?email=${encodeURIComponent(update.email)}`}
-          className="text-sm font-semibold text-[#1b3348]"
+          className="rm-btn h-12 min-h-0 flex-1 rounded-full bg-[#2a332c] px-5 text-[#f7f3ea] hover:bg-[#3a4a3c]"
         >
-          Review movement →
+          Open chart
         </Link>
-        <Link href="/pt-update" className="text-sm font-semibold text-[#1b3348]">
-          Update the plan →
+        <Link href="/pt-update" className="rm-btn rm-btn-ghost h-12 min-h-0 flex-1 rounded-full bg-white">
+          Update plan
         </Link>
       </div>
     </article>

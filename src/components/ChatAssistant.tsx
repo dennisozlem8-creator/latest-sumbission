@@ -44,7 +44,7 @@ export function ChatAssistant() {
   }
 
   return (
-    <div className="fixed bottom-[5.5rem] right-3 z-40 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-3 sm:bottom-6 sm:right-5 print:hidden">
+    <div className="fixed bottom-[calc(9.25rem+env(safe-area-inset-bottom))] right-3 z-30 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-3 sm:right-5 print:hidden">
       {open && (
         <div className="flex h-[min(22rem,60vh)] w-[min(20rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-surface shadow-[0_8px_40px_rgba(0,0,0,0.4)] sm:h-96 sm:w-96">
           <div className="flex items-center justify-between border-b border-[var(--border)] bg-brand/10 px-4 py-3">

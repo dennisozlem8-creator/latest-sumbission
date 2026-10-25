@@ -78,7 +78,13 @@ export default function Home() {
             <div className="mt-5 flex flex-col gap-2 sm:max-w-md">
               {isPatient && (
                 <>
-                  <Link href="/briefing" className="rm-btn rm-btn-brand inline-flex h-12 min-h-0 w-full rounded-full">
+                  <Link href="/pain-check" className="rm-btn rm-btn-brand inline-flex h-14 min-h-0 w-full rounded-full text-base">
+                    {t("startSession", locale)}
+                  </Link>
+                  <Link href="/goniometer" className="rm-btn rm-btn-ghost inline-flex h-12 min-h-0 w-full rounded-full">
+                    {t("navMeasure", locale)}
+                  </Link>
+                  <Link href="/briefing" className="rm-btn rm-btn-ghost inline-flex h-12 min-h-0 w-full rounded-full">
                     {t("goToBriefing", locale)}
                   </Link>
                   <ReportActions locale={locale} className="w-full" />
@@ -160,7 +166,9 @@ export default function Home() {
                       {recoveryPassport(rows, { goal: patient.targetRom || 100, sessionDays: patient.sessionDays }).score ?? "—"}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-[#1b3348]">Review →</span>
+                  <span className="rm-btn h-11 min-h-0 shrink-0 rounded-full bg-[#2a332c] px-4 text-[#f7f3ea]">
+                    {t("openChart", locale)}
+                  </span>
                 </Link>
               );
             })}

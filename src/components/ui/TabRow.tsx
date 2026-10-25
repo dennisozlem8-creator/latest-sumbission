@@ -14,7 +14,7 @@ export function TabRow<T extends string>({ tabs, active, onChange }: TabRowProps
           key={tab.id}
           type="button"
           onClick={() => onChange(tab.id)}
-          className={`min-w-[4.5rem] flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+          className={`min-h-12 min-w-[4.5rem] flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
             active === tab.id ? "bg-[#4f90c6] text-white shadow-sm" : "text-[#2f4a60] hover:text-[#1b3348]"
           }`}
         >

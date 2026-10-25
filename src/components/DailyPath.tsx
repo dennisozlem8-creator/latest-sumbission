@@ -31,7 +31,7 @@ function ToolLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-[#1b3348] ring-1 ring-[#4f90c6]/20 transition hover:bg-[#e8f3fb]"
+      className="inline-flex min-h-11 items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#1b3348] ring-1 ring-[#4f90c6]/25 transition hover:bg-[#e8f3fb]"
     >
       {label}
     </Link>
@@ -64,7 +64,7 @@ export function DailyPath({
           imgClassName={method === "motion" ? "object-cover object-[left_40%]" : "object-cover object-center"}
         />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          <StepLink href="/session" step={`2 · ${t("liveSession", locale)}`} title={t("stepSession", locale)} text={t("pathSessionText", locale)} />
+          <StepLink href="/pain-check" step={`2 · ${t("liveSession", locale)}`} title={t("stepSession", locale)} text={t("pathSessionText", locale)} />
           <StepLink href="/report" step={`3 · ${t("reportKicker", locale)}`} title={t("stepReport", locale)} text={t("stepReportText", locale)} />
         </div>
       </div>
