@@ -17,9 +17,11 @@ export type MovementSample = {
   span?: number;
   /** The requested side was not visible, so the other side was in frame. */
   switchedSide?: boolean;
+  /** A bone points at the camera, so the picture is not a side view. */
+  facing?: boolean;
 };
 
-export type PoseIssue = "hidden" | "small" | "edge" | "wrong-side" | "tilt";
+export type PoseIssue = "hidden" | "small" | "edge" | "wrong-side" | "tilt" | "front" | "disagree";
 
 export type MovementSummary = {
   peak: number;
@@ -243,6 +245,11 @@ export function sampleFromPose(
   const leftSide = pick === triple.left;
   const sameShoulder = leftSide ? landmarks[11] : landmarks[12];
   const otherShoulder = leftSide ? landmarks[12] : landmarks[11];
+  const worldPickA = worldLandmarks?.[pick[0]];
+  const worldPickB = worldLandmarks?.[pick[1]];
+  const worldPickC = worldLandmarks?.[pick[2]];
+  const facing =
+    worldPickA && worldPickB && worldPickC ? limbFacesCamera(worldPickA, worldPickB, worldPickC) : false;
   return {
     time,
     angle,
@@ -258,7 +265,17 @@ export function sampleFromPose(
     visibility: (visibilityOf(a) + visibilityOf(b) + visibilityOf(c)) / 3,
     span,
     switchedSide: pick !== preferred,
+    facing,
   };
+}
+
+function limbFacesCamera(a: PoseLandmark, b: PoseLandmark, c: PoseLandmark) {
+  const towardCamera = (start: PoseLandmark, end: PoseLandmark) => {
+    const across = Math.hypot(start.x - end.x, start.y - end.y);
+    const depth = Math.abs((start.z ?? 0) - (end.z ?? 0));
+    return depth > 0.05 && depth > across * 0.85;
+  };
+  return towardCamera(a, b) || towardCamera(b, c);
 }
 
 const MIN_SPAN: Record<KidsJoint, number> = {
@@ -270,6 +287,25 @@ const MIN_SPAN: Record<KidsJoint, number> = {
 };
 
 const TILT_DEGREES = 12;
+
+const SIDE_SPAN: Record<KidsJoint, number> = {
+  knee: 0.3,
+  trunk: 0.3,
+  ankle: 0.24,
+  wrist: 0.16,
+  shoulder: 0.26,
+};
+
+function bodyWidth(sample: MovementSample) {
+  let width = 0;
+  if (sample.shoulder && sample.oppositeShoulder) {
+    width = Math.max(width, Math.hypot(sample.shoulder.x - sample.oppositeShoulder.x, sample.shoulder.y - sample.oppositeShoulder.y));
+  }
+  if (sample.hip && sample.oppositeHip) {
+    width = Math.max(width, Math.hypot(sample.hip.x - sample.oppositeHip.x, sample.hip.y - sample.oppositeHip.y));
+  }
+  return width;
+}
 
 /** Degrees the camera is rolled, when both shoulders or both hips are far enough apart to judge. */
 export function cameraRollDegrees(sample: MovementSample): number | null {
@@ -294,6 +330,12 @@ export function poseIssue(sample: MovementSample, joint: KidsJoint, preferLeft: 
   if ((sample.visibility ?? 1) < 0.5) return "hidden";
   const roll = cameraRollDegrees(sample);
   if (roll != null && roll > TILT_DEGREES) return "tilt";
+  const limb =
+    sample.span ??
+    Math.hypot(sample.hip.x - sample.knee.x, sample.hip.y - sample.knee.y) +
+      Math.hypot(sample.ankle.x - sample.knee.x, sample.ankle.y - sample.knee.y);
+  const broad = bodyWidth(sample) >= 0.16;
+  if ((sample.facing || (broad && limb < SIDE_SPAN[joint])) && limb >= MIN_SPAN[joint] * 0.65) return "front";
   if (sample.switchedSide || (sample.side != null && (sample.side === "left") !== preferLeft)) return "wrong-side";
   const span =
     sample.span ??

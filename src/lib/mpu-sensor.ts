@@ -1,7 +1,12 @@
 import { usbBlockReason, usbHeartRateSupported, usbPortLabel } from "@/lib/heart-sensor";
+import type { MeasuredJoint } from "@/lib/goniometer";
 
 export const WIRED_MPU_BAUD = 115200;
 export const BLUETOOTH_MPU_BAUD = 9600;
+
+export type GravityVector = { x: number; y: number; z: number };
+
+export type BandFit = "ok" | "moving" | "twisted";
 
 export type SerialMpuSample = {
   angle?: number;
@@ -11,7 +16,17 @@ export type SerialMpuSample = {
   i2cOk?: boolean;
   scan?: string;
   error?: string;
+  gravity?: GravityVector;
 };
+
+/** Gravity is in g. A vertical limb should not have the board face up or down. */
+export function bandFit(gravity: GravityVector, joint: MeasuredJoint = "knee"): BandFit {
+  const mag = Math.hypot(gravity.x, gravity.y, gravity.z);
+  if (mag < 0.75 || mag > 1.25) return "moving";
+  if (joint === "wrist") return "ok";
+  if (Math.abs(gravity.z) / mag > 0.72) return "twisted";
+  return "ok";
+}
 
 export function parseSerialMpuLine(line: string): SerialMpuSample | null {
   const text = line.trim().replace(/\r$/, "");
@@ -25,6 +40,16 @@ export function parseSerialMpuLine(line: string): SerialMpuSample | null {
   if (/^I2C OK\b/i.test(text)) return { hello: true, i2cOk: true, chip: "MPU-6050" };
   if (/^SCAN\b/i.test(text)) return { scan: text.replace(/^SCAN\s*/i, "") || "none" };
   if (/^ERR\b/i.test(text) || /no I2C/i.test(text)) return { error: text };
+  const gravMatch = text.match(/^GRAV\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)$/i);
+  if (gravMatch) {
+    return {
+      gravity: {
+        x: Number(gravMatch[1]) / 1000,
+        y: Number(gravMatch[2]) / 1000,
+        z: Number(gravMatch[3]) / 1000,
+      },
+    };
+  }
   const angleMatch = text.match(/^ANGLE\s*[:=]?\s*(-?\d{1,3})$/i);
   if (angleMatch) {
     const angle = Math.max(0, Math.min(180, Math.abs(Number(angleMatch[1]))));

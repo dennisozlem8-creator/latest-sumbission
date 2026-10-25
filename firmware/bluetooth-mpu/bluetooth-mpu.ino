@@ -388,6 +388,16 @@ void loop() {
   if (angle < 0) angle = 0;
   if (angle > 180) angle = 180;
 
+  const float gx = ax / 16384.0f;
+  const float gy = ay / 16384.0f;
+  const float gz = az / 16384.0f;
+  Serial.print("GRAV ");
+  Serial.print((int)(gx * 1000.0f));
+  Serial.print(" ");
+  Serial.print((int)(gy * 1000.0f));
+  Serial.print(" ");
+  Serial.println((int)(gz * 1000.0f));
+
   Serial.print("ANGLE ");
   Serial.println(angle);
 

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Exercise } from "@/lib/assessments";
 import { getExerciseMedia, getKidsExerciseImage } from "@/lib/exercise-media";
 import { persistMeasurement } from "@/lib/goniometer";
-import { BLUETOOTH_MPU_BAUD, connectWiredMpu, mpuUsbHelp, mpuUsbSupported, requestUsbMpuPort, type MpuConnection } from "@/lib/mpu-sensor";
+import { BLUETOOTH_MPU_BAUD, bandFit, connectWiredMpu, mpuUsbHelp, mpuUsbSupported, parseSerialMpuLine, requestUsbMpuPort, type MpuConnection } from "@/lib/mpu-sensor";
 import { createRepCounter } from "@/lib/rep-counter";
 import { useAuth } from "./AuthProvider";
 import { getFeedbackState } from "@/lib/feedback";
@@ -76,6 +76,7 @@ export function QuestGame({
   const [motionReady, setMotionReady] = useState(false);
   const [motionConnecting, setMotionConnecting] = useState(false);
   const [motionError, setMotionError] = useState("");
+  const [motionBand, setMotionBand] = useState<"ok" | "moving" | "twisted" | null>(null);
   const [motionManual, setMotionManual] = useState(false);
   const [musclePractice, setMusclePractice] = useState(false);
   const [photoStatus, setPhotoStatus] = useState<KidsPhotoStatus>({
@@ -92,6 +93,7 @@ export function QuestGame({
   const peakRef = useRef(0);
   const savedRef = useRef(false);
   const motionConnection = useRef<MpuConnection | null>(null);
+  const motionBandOk = useRef(true);
   const angleCounter = useRef(createRepCounter());
   const effortCounter = useRef(createRepCounter({ minTravel: 18 }));
   const recordingRef = useRef(false);
@@ -199,10 +201,18 @@ export function QuestGame({
       const connection = await connectWiredMpu({
         port,
         baudRate: BLUETOOTH_MPU_BAUD,
+        onLine: (line) => {
+          const sample = parseSerialMpuLine(line);
+          if (!sample?.gravity) return;
+          const fit = bandFit(sample.gravity, joint);
+          motionBandOk.current = fit === "ok";
+          setMotionBand(fit);
+        },
         onAngle: (next) => {
           setMotionReady(true);
           setMotionManual(false);
           setAngle(next);
+          if (!motionBandOk.current) return;
           peakRef.current = Math.max(peakRef.current, next);
           pushLive(next);
           if (recordingRef.current && angleCounter.current.push(next)) addRep(next);
@@ -367,6 +377,12 @@ export function QuestGame({
                           : "Bluetooth motion sensor ready"
                         : "Pair the Bluetooth motion sensor"}
                 </p>
+                {motionBand === "twisted" ? (
+                  <p className="mt-1 text-sm font-semibold text-[#8a3b2c]">Turn the band so the flat face is against the skin. Reps wait until it is.</p>
+                ) : null}
+                {motionBand === "moving" ? (
+                  <p className="mt-1 text-sm font-semibold text-[#8a3b2c]">Hold still. A moving band does not count a rep.</p>
+                ) : null}
                 {motionError ? <p className="mt-1 text-sm text-[#5b6685]">{motionError}</p> : null}
               </div>
               {!motionReady && (

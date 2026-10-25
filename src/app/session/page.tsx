@@ -22,6 +22,7 @@ import { PeakBarChart, TestLiveCharts } from "@/components/TestLiveCharts";
 import { HeartRatePanel } from "@/components/HeartRatePanel";
 import { MyoWarePanel } from "@/components/MyoWarePanel";
 import { MotionPanel, PhotoMeasureCard } from "@/components/MotionPanel";
+import { kidsJointForArea } from "@/lib/pose-goniometer";
 import { useHeartRate } from "@/components/HeartRateProvider";
 import { useMyoWare } from "@/components/MyoWareProvider";
 import { prescribedMethod } from "@/lib/measure-method";
@@ -200,6 +201,7 @@ export default function SessionPage() {
           <MotionPanel
             compact
             live={recording}
+            joint={kidsJointForArea(areaId)}
             onConnected={() => setMotionReady(true)}
             onAngle={noteAngle}
           />
@@ -213,6 +215,7 @@ export default function SessionPage() {
               <MotionPanel
                 compact
                 live={recording}
+                joint={kidsJointForArea(areaId)}
                 onConnected={() => setMotionReady(true)}
                 onAngle={noteAngle}
               />

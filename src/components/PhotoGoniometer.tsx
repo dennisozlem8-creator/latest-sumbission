@@ -348,6 +348,7 @@ export function PhotoGoniometer({
   const [saveMessage, setSaveMessage] = useState("");
   const [photoAnalyzing, setPhotoAnalyzing] = useState(false);
   const [holdingStill, setHoldingStill] = useState(false);
+  const [holdPass, setHoldPass] = useState<1 | 2>(1);
   const [videoReady, setVideoReady] = useState(false);
   const [rows, setRows] = useState<GoniometerMeasurement[]>([]);
   const analysisRef = useRef<HTMLElement>(null);
@@ -667,6 +668,8 @@ export function PhotoGoniometer({
   function retakeMessage(issue: PoseIssue) {
     if (issue === "hidden") return t("photoRetakeHidden", locale);
     if (issue === "tilt") return t("photoRetakeTilt", locale);
+    if (issue === "front") return t("photoRetakeFront", locale);
+    if (issue === "disagree") return t("photoRetakeAgree", locale);
     if (issue === "edge") return t("photoRetakeEdge", locale);
     if (issue === "wrong-side") return t("photoRetakeSide", locale);
     if (poseJoint === "ankle") return t("photoRetakeAnkle", locale);
@@ -712,6 +715,21 @@ export function PhotoGoniometer({
     }
   }
 
+  async function captureBurst(video: HTMLVideoElement) {
+    const frames: HTMLCanvasElement[] = [];
+    for (let index = 0; index < 5; index += 1) {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return frames;
+      ctx.drawImage(video, 0, 0);
+      frames.push(canvas);
+      if (index < 4) await new Promise((resolve) => window.setTimeout(resolve, 200));
+    }
+    return frames;
+  }
+
   async function captureStill() {
     const video = videoRef.current;
     if (!video?.videoWidth || holdingStill) {
@@ -719,42 +737,61 @@ export function PhotoGoniometer({
       return;
     }
     setHoldingStill(true);
+    setHoldPass(1);
     setCameraError("");
-    const frames: HTMLCanvasElement[] = [];
     try {
-      for (let index = 0; index < 5; index += 1) {
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(video, 0, 0);
-        frames.push(canvas);
-        if (index < 4) await new Promise((resolve) => window.setTimeout(resolve, 200));
+      const firstFrames = await captureBurst(video);
+      if (firstFrames.length < 5) return;
+      const first = await readStillCanvases(firstFrames, preferLeft, poseJoint);
+      if (!first || first.issue) {
+        const blob = await new Promise<Blob | null>((resolve) => firstFrames[firstFrames.length - 1]?.toBlob(resolve, "image/jpeg", 0.92));
+        if (blob) {
+          stopCamera();
+          if (photoUrl) URL.revokeObjectURL(photoUrl);
+          setPhotoUrl(URL.createObjectURL(blob));
+        }
+        setVideoReady(false);
+        setPoints({});
+        setSamples([]);
+        setSaved(false);
+        setSaveMessage("");
+        setStep("upload");
+        applyStill(first);
+        return;
       }
-      const blob = await new Promise<Blob | null>((resolve) => frames[frames.length - 1]?.toBlob(resolve, "image/jpeg", 0.92));
+      setHoldPass(2);
+      await new Promise((resolve) => window.setTimeout(resolve, 700));
+      const live = videoRef.current;
+      if (!live?.videoWidth) return;
+      const secondFrames = await captureBurst(live);
+      if (secondFrames.length < 5) return;
+      const second = await readStillCanvases(secondFrames, preferLeft, poseJoint);
+      const blob = await new Promise<Blob | null>((resolve) => secondFrames[secondFrames.length - 1]?.toBlob(resolve, "image/jpeg", 0.92));
       if (!blob) return;
       stopCamera();
       if (photoUrl) URL.revokeObjectURL(photoUrl);
-      const url = URL.createObjectURL(blob);
-      setPhotoUrl(url);
+      setPhotoUrl(URL.createObjectURL(blob));
       setVideoReady(false);
       setPoints({});
       setSamples([]);
       setSaved(false);
       setSaveMessage("");
       setStep("upload");
-      setPhotoAnalyzing(true);
-      try {
-        applyStill(await readStillCanvases(frames, preferLeft, poseJoint));
-      } catch (error) {
-        setPoints({});
-        setCameraError(error instanceof Error ? error.message : "Could not analyze that photo. Mark the points by hand.");
-      } finally {
-        setPhotoAnalyzing(false);
+      if (!second || second.issue) {
+        applyStill(second);
+        return;
       }
+      if (Math.abs(first.angle - second.angle) > 5) {
+        applyStill({ ...second, issue: "disagree" });
+        return;
+      }
+      applyStill({ ...second, angle: Math.round((first.angle + second.angle) / 2), issue: null });
+    } catch (error) {
+      setPoints({});
+      setCameraError(error instanceof Error ? error.message : "Could not analyze that photo. Mark the points by hand.");
     } finally {
       setHoldingStill(false);
+      setHoldPass(1);
     }
   }
 
@@ -945,7 +982,7 @@ export function PhotoGoniometer({
                   <div className="h-[64%] w-[52%] rounded-[1.5rem] border-2 border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,0.28)]" />
                   {holdingStill && (
                     <p className="absolute rounded-full bg-[#1b3348] px-4 py-2 text-sm font-semibold text-white">
-                      {t("photoHold", locale)}
+                      {holdPass === 2 ? t("photoHoldAgain", locale) : t("photoHold", locale)}
                     </p>
                   )}
                 </div>
@@ -975,7 +1012,7 @@ export function PhotoGoniometer({
                         disabled={holdingStill}
                         onClick={() => void captureStill()}
                       >
-                        {holdingStill ? t("photoHold", locale) : t("takePhoto", locale)}
+                        {holdingStill ? (holdPass === 2 ? t("photoHoldAgain", locale) : t("photoHold", locale)) : t("takePhoto", locale)}
                       </button>
                     </>
                   )}

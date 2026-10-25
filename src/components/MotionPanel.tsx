@@ -4,23 +4,30 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   BLUETOOTH_MPU_BAUD,
+  bandFit,
   connectWiredMpu,
   mpuUsbHelp,
   mpuUsbSupported,
   parseSerialMpuLine,
   requestUsbMpuPort,
+  type BandFit,
   type MpuConnection,
 } from "@/lib/mpu-sensor";
+import type { MeasuredJoint } from "@/lib/goniometer";
+import { t } from "@/lib/i18n";
 import { SafePicture } from "@/components/SafePicture";
+import { useClinicLocale } from "@/components/useClinicLocale";
 
 type MotionPanelProps = {
   compact?: boolean;
   live?: boolean;
+  joint?: MeasuredJoint;
   onConnected?: () => void;
   onAngle?: (angle: number) => void;
 };
 
-export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanelProps) {
+export function MotionPanel({ compact, live, joint = "knee", onConnected, onAngle }: MotionPanelProps) {
+  const { locale } = useClinicLocale();
   const [connecting, setConnecting] = useState(false);
   const [ready, setReady] = useState(false);
   const [angle, setAngle] = useState(0);
@@ -29,11 +36,16 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
   const [serialLog, setSerialLog] = useState<string[]>([]);
   const [i2cOk, setI2cOk] = useState(false);
   const [usingBluetooth, setUsingBluetooth] = useState(false);
+  const [band, setBand] = useState<BandFit | null>(null);
   const connectionRef = useRef<MpuConnection | null>(null);
   const onAngleRef = useRef(onAngle);
   const onConnectedRef = useRef(onConnected);
+  const jointRef = useRef(joint);
+  const bandOkRef = useRef(true);
+  const sawGravityRef = useRef(false);
   onAngleRef.current = onAngle;
   onConnectedRef.current = onConnected;
+  jointRef.current = joint;
   const usbOk = mpuUsbSupported();
 
   useEffect(() => {
@@ -63,11 +75,18 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
           setAngle(next);
           setI2cOk(true);
           setReady(true);
+          if (sawGravityRef.current && !bandOkRef.current) return;
           onAngleRef.current?.(next);
         },
         onLine: (line) => {
           setSerialLog((prev) => [...prev.slice(-7), line]);
           const sample = parseSerialMpuLine(line);
+          if (sample?.gravity) {
+            const fit = bandFit(sample.gravity, jointRef.current);
+            sawGravityRef.current = true;
+            bandOkRef.current = fit === "ok";
+            setBand(fit);
+          }
           if (sample?.hello) setReady(true);
           if (sample?.i2cOk) setI2cOk(true);
           if (sample?.error) {
@@ -116,6 +135,9 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
     setSerialLog([]);
     setI2cOk(false);
     setUsingBluetooth(false);
+    setBand(null);
+    sawGravityRef.current = false;
+    bandOkRef.current = true;
     setError("");
   }
 
@@ -172,7 +194,7 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
           {serialLog.map((line, i) => (
             <p
               key={`${line}-${i}`}
-              className={/^(HELLO|ANGLE|I2C OK|WHO|SCAN)\b/i.test(line) ? "font-semibold text-foreground" : undefined}
+              className={/^(HELLO|ANGLE|GRAV|I2C OK|WHO|SCAN)\b/i.test(line) ? "font-semibold text-foreground" : undefined}
             >
               {line}
             </p>
@@ -180,6 +202,9 @@ export function MotionPanel({ compact, live, onConnected, onAngle }: MotionPanel
         </div>
       )}
 
+      {band === "twisted" ? <p className="mt-3 text-sm font-semibold text-alert">{t("bandTwisted", locale)}</p> : null}
+      {band === "moving" ? <p className="mt-3 text-sm font-semibold text-alert">{t("bandMoving", locale)}</p> : null}
+      {band === "ok" ? <p className="mt-3 text-sm font-semibold text-[#1b3348]">{t("bandReady", locale)}</p> : null}
       {error ? <p className="mt-3 text-sm text-alert">{error}</p> : null}
       {live && ready ? (
         <p className="mt-3 text-sm font-semibold text-brand-light">Live angle is filling this session.</p>
