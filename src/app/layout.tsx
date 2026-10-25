@@ -6,6 +6,7 @@ import { HeartRateProvider } from "@/components/HeartRateProvider";
 import { MyoWareProvider } from "@/components/MyoWareProvider";
 import { NotificationScheduler } from "@/components/NotificationScheduler";
 import { ChatAssistant } from "@/components/ChatAssistant";
+import { OfflineStatus } from "@/components/OfflineStatus";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,6 +53,7 @@ export default function RootLayout({
           <HeartRateProvider>
             <MyoWareProvider>
               <AuthGate>
+                <OfflineStatus />
                 {children}
                 <NotificationScheduler />
                 <ChatAssistant />

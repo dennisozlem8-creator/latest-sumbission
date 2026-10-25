@@ -189,6 +189,76 @@ export const exerciseMedia: Record<string, ExerciseMedia> = {
       reward: "Squeeze badge",
     },
   },
+  pendulum: {
+    image: "/exercises/mobility.svg",
+    kidsQuest: {
+      title: "Pendulum Swing",
+      story: "Let the arm swing in a small circle.",
+      gamePrompt: "Tap for each circle",
+      reps: 10,
+      reward: "Swing badge",
+    },
+  },
+  "assisted-raise": {
+    image: "/exercises/strength.svg",
+    kidsQuest: {
+      title: "Helping Hand Lift",
+      story: "The other hand helps the arm lift.",
+      gamePrompt: "Tap after each lift",
+      reps: 8,
+      reward: "Lift badge",
+    },
+  },
+  "wall-slide": {
+    image: "/exercises/stretch.svg",
+    kidsQuest: {
+      title: "Wall Climb",
+      story: "Slide the arms up the wall, then back down.",
+      gamePrompt: "Tap at the top of each slide",
+      reps: 8,
+      reward: "Wall badge",
+    },
+  },
+  "isometric-external-rotation": {
+    image: "/exercises/strength.svg",
+    kidsQuest: {
+      title: "Wall Press",
+      story: "Press the hand into the wall and hold.",
+      gamePrompt: "Tap after each hold",
+      reps: 8,
+      reward: "Press badge",
+    },
+  },
+  "sit-to-stand": {
+    image: "/exercises/strength.svg",
+    kidsQuest: {
+      title: "Chair Stand",
+      story: "Stand up from the chair, then sit back down.",
+      gamePrompt: "Tap each time you stand",
+      reps: 8,
+      reward: "Stand badge",
+    },
+  },
+  "towel-stretch": {
+    image: "/exercises/ankle.svg",
+    kidsQuest: {
+      title: "Towel Pull",
+      story: "Pull the foot gently with a towel.",
+      gamePrompt: "Tap after each hold",
+      reps: 6,
+      reward: "Towel badge",
+    },
+  },
+  "tendon-glides": {
+    image: "/exercises/wrist.svg",
+    kidsQuest: {
+      title: "Finger Wave",
+      story: "Open, hook, and close the hand.",
+      gamePrompt: "Tap for each cycle",
+      reps: 8,
+      reward: "Glide badge",
+    },
+  },
   "shoulder-rolls": {
     image: "/exercises/mobility.svg",
     kidsQuest: {

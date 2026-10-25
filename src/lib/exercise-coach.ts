@@ -260,6 +260,111 @@ const catalog: Record<string, CoachCopy> = {
       equipment: "Pelota blanda",
     },
   },
+  pendulum: {
+    minutes: 3,
+    easierId: "shoulder-rolls",
+    harderId: "assisted-raise",
+    en: {
+      steps: ["Lean on a table with the other hand.", "Let the sore arm hang.", "Swing it in a small circle, then the other way."],
+      stopIf: "Stop if the shoulder pinches or the swing gets large.",
+      equipment: "Table",
+    },
+    es: {
+      steps: ["Apóyate en una mesa con la otra mano.", "Deja colgar el brazo que duele.", "Haz un círculo pequeño y luego al revés."],
+      stopIf: "Para si el hombro pincha o el balanceo se hace grande.",
+      equipment: "Mesa",
+    },
+  },
+  "assisted-raise": {
+    minutes: 4,
+    easierId: "pendulum",
+    harderId: "wall-slide",
+    en: {
+      steps: ["Hold a stick with both hands, or clasp the hands.", "Lift the arm forward only as far as it stays comfortable.", "Lower slowly."],
+      stopIf: "Stop if pain jumps or the shoulder shrugs to the ear.",
+      equipment: "Stick, optional",
+    },
+    es: {
+      steps: ["Sujeta un palo con las dos manos, o junta las manos.", "Sube el brazo hacia adelante solo hasta donde sea cómodo.", "Baja lento."],
+      stopIf: "Para si el dolor sube de golpe o el hombro se encoge hacia la oreja.",
+      equipment: "Palo, opcional",
+    },
+  },
+  "wall-slide": {
+    minutes: 4,
+    easierId: "assisted-raise",
+    harderId: "isometric-external-rotation",
+    en: {
+      steps: ["Stand facing a wall, forearms on it.", "Slide the arms up.", "Stop before the shoulder shrugs, then slide back down."],
+      stopIf: "Stop if the shoulder pinches at the top.",
+      equipment: "Wall",
+    },
+    es: {
+      steps: ["De pie frente a una pared, antebrazos apoyados.", "Desliza los brazos hacia arriba.", "Para antes de que el hombro se encoja y baja."],
+      stopIf: "Para si el hombro pincha arriba.",
+      equipment: "Pared",
+    },
+  },
+  "isometric-external-rotation": {
+    minutes: 3,
+    easierId: "pendulum",
+    harderId: "wall-slide",
+    en: {
+      steps: ["Elbow bent at your side, towel between elbow and ribs.", "Press the back of the hand into a wall.", "Hold, then relax. The arm does not move."],
+      stopIf: "Stop if pain is sharp or the elbow leaves your side.",
+      equipment: "Wall, towel",
+    },
+    es: {
+      steps: ["Codo doblado al lado, toalla entre el codo y las costillas.", "Empuja el dorso de la mano contra una pared.", "Sostén y suelta. El brazo no se mueve."],
+      stopIf: "Para si el dolor es agudo o el codo se separa del costado.",
+      equipment: "Pared, toalla",
+    },
+  },
+  "sit-to-stand": {
+    minutes: 5,
+    easierId: "quad-sets",
+    harderId: "mini-squats",
+    en: {
+      steps: ["Sit toward the front of a chair.", "Lean forward a little and stand up.", "Sit back down with control. Use the armrests if you need them."],
+      stopIf: "Stop if the knee feels unstable or pain is sharp.",
+      equipment: "Chair",
+    },
+    es: {
+      steps: ["Siéntate al borde de una silla.", "Inclínate un poco hacia adelante y ponte de pie.", "Siéntate de nuevo con control. Usa los brazos de la silla si hace falta."],
+      stopIf: "Para si la rodilla se siente inestable o el dolor es agudo.",
+      equipment: "Silla",
+    },
+  },
+  "towel-stretch": {
+    minutes: 4,
+    easierId: "ankle-pumps",
+    harderId: "calf-stretch",
+    en: {
+      steps: ["Sit with the leg straight.", "Loop a towel around the ball of the foot.", "Pull the toes toward you and hold."],
+      stopIf: "Stop if the stretch becomes a sharp pain in the ankle or calf.",
+      equipment: "Towel",
+    },
+    es: {
+      steps: ["Siéntate con la pierna estirada.", "Pasa una toalla por la planta del pie.", "Trae los dedos hacia ti y sostén."],
+      stopIf: "Para si el estiramiento se vuelve un dolor agudo en el tobillo o la pantorrilla.",
+      equipment: "Toalla",
+    },
+  },
+  "tendon-glides": {
+    minutes: 3,
+    easierId: "wrist-circles",
+    harderId: "prayer-stretch",
+    en: {
+      steps: ["Hold the hand up, fingers straight.", "Hook the fingers, then make a full fist.", "Open the hand again. Keep the wrist quiet."],
+      stopIf: "Stop if a finger catches or tingling gets worse.",
+      equipment: "None",
+    },
+    es: {
+      steps: ["Mano arriba, dedos rectos.", "Engancha los dedos y luego cierra el puño.", "Abre la mano otra vez. Deja la muñeca quieta."],
+      stopIf: "Para si un dedo se engancha o empeora el hormigueo.",
+      equipment: "Ninguno",
+    },
+  },
   "shoulder-rolls": {
     minutes: 3,
     easierId: "neck-rotation",

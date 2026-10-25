@@ -73,6 +73,11 @@ const faq: { keywords: string[]; answer: string }[] = [
       "Wrist recovery benefits from gentle circles, flexor stretches, and grip strengthening. Take breaks from repetitive typing every 20–30 minutes.",
   },
   {
+    keywords: ["shoulder", "overhead"],
+    answer:
+      "Shoulder work starts with a small pendulum, then an assisted raise and a wall slide. Keep the shoulder down, away from the ear. Stop if it pinches. Measure the lift from the side: hip, shoulder, and elbow.",
+  },
+  {
     keywords: ["elbow", "tennis"],
     answer:
       "Elbow rehab focuses on gradual loading and eccentric exercises. Use a brace during activity if recommended, and ice after sessions if swollen.",
@@ -130,7 +135,7 @@ const faq: { keywords: string[]; answer: string }[] = [
   {
     keywords: ["help", "what can you"],
     answer:
-      "I can answer questions about exercises, body areas (ankle, knee, back, wrist), ROM tests, streaks, kids quests, braces in the shop, and general recovery tips.",
+      "I can answer questions about exercises, body areas (ankle, knee, back, wrist, shoulder), ROM tests, streaks, kids quests, braces in the shop, and general recovery tips.",
   },
 ];
 

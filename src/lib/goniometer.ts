@@ -35,7 +35,7 @@ export const LANDMARK_LABELS: Record<LandmarkId, string> = {
 };
 
 /** Joints the photo and video tool can measure. Same set as the body-area sensors. */
-export type MeasuredJoint = "knee" | "ankle" | "wrist" | "trunk";
+export type MeasuredJoint = "knee" | "ankle" | "wrist" | "trunk" | "shoulder";
 
 export const EXERCISE_OPTIONS = [
   "Seated Knee Flexion",
@@ -53,12 +53,15 @@ export const JOINT_OPTIONS = [
   "Lower back (Left)",
   "Wrist (Right)",
   "Wrist (Left)",
+  "Shoulder (Right)",
+  "Shoulder (Left)",
 ];
 
 export function measuredJointFromLabel(label: string): MeasuredJoint {
   const text = label.toLowerCase();
   if (text.includes("ankle")) return "ankle";
   if (text.includes("wrist")) return "wrist";
+  if (text.includes("shoulder")) return "shoulder";
   if (text.includes("back") || text.includes("trunk")) return "trunk";
   return "knee";
 }
@@ -68,6 +71,7 @@ export function pointLabelsForJoint(joint: MeasuredJoint): Record<LandmarkId, st
   if (joint === "ankle") return { hip: "Knee", knee: "Ankle", ankle: "Toe" };
   if (joint === "wrist") return { hip: "Elbow", knee: "Wrist", ankle: "Finger" };
   if (joint === "trunk") return { hip: "Shoulder", knee: "Hip", ankle: "Knee" };
+  if (joint === "shoulder") return { hip: "Hip", knee: "Shoulder", ankle: "Elbow" };
   return LANDMARK_LABELS;
 }
 
@@ -75,6 +79,7 @@ export function exercisesForJoint(joint: MeasuredJoint): string[] {
   if (joint === "ankle") return ["Ankle pumps", "Seated ankle bend", "Standing calf raise"];
   if (joint === "wrist") return ["Wrist flexion", "Wrist extension"];
   if (joint === "trunk") return ["Forward bend", "Return to stand"];
+  if (joint === "shoulder") return ["Pendulum", "Assisted raise", "Wall slide"];
   return [...EXERCISE_OPTIONS];
 }
 

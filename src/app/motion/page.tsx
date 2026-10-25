@@ -40,6 +40,30 @@ export default function MotionSensorPage() {
       />
 
       <DashCard className="mt-6 p-5">
+        <h2 className="rm-serif text-2xl font-semibold text-[#1b3348]">One band, lined up on the body</h2>
+        <p className="mt-2 text-sm leading-6 text-[#2f4a60]">
+          Wear a single soft band. The flat face of the sensor sits against the skin, and the long edge follows the bone. The same spot each session is what makes the angle comparable.
+        </p>
+        <ul className="mt-4 space-y-2 text-sm leading-6 text-[#2f4a60]">
+          <li>
+            <span className="font-semibold text-[#1b3348]">Shoulder.</span> Upper arm, just below the sleeve seam, on the outside of the arm.
+          </li>
+          <li>
+            <span className="font-semibold text-[#1b3348]">Knee.</span> Thigh, a hand’s width above the kneecap, on the front.
+          </li>
+          <li>
+            <span className="font-semibold text-[#1b3348]">Ankle.</span> Just above the ankle bones, on the outside of the lower leg.
+          </li>
+          <li>
+            <span className="font-semibold text-[#1b3348]">Wrist.</span> Forearm, two finger-widths above the wrist crease.
+          </li>
+          <li>
+            <span className="font-semibold text-[#1b3348]">Lower back.</span> Around the waist, sensor on the side of the trunk, not on the spine.
+          </li>
+        </ul>
+      </DashCard>
+
+      <DashCard className="mt-6 p-5">
         <h2 className="rm-serif text-2xl font-semibold text-[#1b3348]">Connect with Bluetooth</h2>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-[#2f4a60]">
           <li>Power the Uno from a phone charger. Leave it unplugged from the computer.</li>

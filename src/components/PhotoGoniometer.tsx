@@ -666,10 +666,12 @@ export function PhotoGoniometer({
 
   function retakeMessage(issue: PoseIssue) {
     if (issue === "hidden") return t("photoRetakeHidden", locale);
+    if (issue === "tilt") return t("photoRetakeTilt", locale);
     if (issue === "edge") return t("photoRetakeEdge", locale);
     if (issue === "wrong-side") return t("photoRetakeSide", locale);
     if (poseJoint === "ankle") return t("photoRetakeAnkle", locale);
     if (poseJoint === "wrist") return t("photoRetakeWrist", locale);
+    if (poseJoint === "shoulder") return t("photoRetakeShoulder", locale);
     return t("photoRetakeSmall", locale);
   }
 

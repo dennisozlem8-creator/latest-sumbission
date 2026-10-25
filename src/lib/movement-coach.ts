@@ -216,10 +216,16 @@ const REGION_CUES: Record<Exclude<MeasuredJoint, "knee">, string[]> = {
     "Hinge from the hips. Keep the knees soft and the motion slow.",
     "Stop if pain is sharp or travels down the leg. A smaller bend still counts.",
   ],
+  shoulder: [
+    "Turn sideways so the camera sees the hip, shoulder, and elbow.",
+    "Raise the arm forward. Keep the shoulder from shrugging toward the ear.",
+    "Stop if the shoulder pinches. A smaller lift still counts.",
+  ],
 };
 
 function regionName(kind: MeasuredJoint) {
   if (kind === "trunk") return "lower back";
+  if (kind === "shoulder") return "shoulder";
   return kind;
 }
 

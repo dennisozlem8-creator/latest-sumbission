@@ -31,6 +31,12 @@ export const bodyAreas: BodyArea[] = [
     cover: "/images/landing-myoware-arm.webp?v=1",
   },
   {
+    id: "shoulder",
+    label: "Shoulder",
+    description: "Raise the arm forward and track shoulder motion.",
+    cover: "/images/landing-myoware-arm.webp?v=1",
+  },
+  {
     id: "other",
     label: "Other",
     description: "Explore exercises for additional areas.",

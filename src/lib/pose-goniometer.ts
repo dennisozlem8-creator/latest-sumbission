@@ -19,7 +19,7 @@ export type MovementSample = {
   switchedSide?: boolean;
 };
 
-export type PoseIssue = "hidden" | "small" | "edge" | "wrong-side";
+export type PoseIssue = "hidden" | "small" | "edge" | "wrong-side" | "tilt";
 
 export type MovementSummary = {
   peak: number;
@@ -139,6 +139,7 @@ function segmentRatioLimits(joint: KidsJoint, strict: boolean): [number, number]
   if (joint === "ankle") return strict ? [0.28, 3.6] : [0.18, 4.5];
   if (joint === "wrist") return strict ? [0.35, 2.8] : [0.2, 3.8];
   if (joint === "trunk") return strict ? [0.35, 2.8] : [0.2, 3.8];
+  if (joint === "shoulder") return strict ? [0.4, 3.2] : [0.28, 4.2];
   return strict ? [0.4, 2.5] : [0.22, 3.6];
 }
 
@@ -168,6 +169,7 @@ function spatialLimits(joint: KidsJoint) {
   if (joint === "ankle") return { min: 0.08, max: 0.7, ratioMin: 0.28, ratioMax: 3.4 };
   if (joint === "wrist") return { min: 0.1, max: 0.55, ratioMin: 0.4, ratioMax: 2.6 };
   if (joint === "trunk") return { min: 0.18, max: 0.95, ratioMin: 0.4, ratioMax: 2.4 };
+  if (joint === "shoulder") return { min: 0.12, max: 0.9, ratioMin: 0.35, ratioMax: 3.2 };
   return { min: 0.18, max: 0.85, ratioMin: 0.45, ratioMax: 2.2 };
 }
 
@@ -196,7 +198,7 @@ export function sampleFromPose(
   joint: KidsJoint = "knee",
   worldLandmarks?: PoseLandmark[]
 ): MovementSample | null {
-  const needed = joint === "ankle" ? 33 : 17;
+  const needed = joint === "ankle" ? 33 : joint === "shoulder" ? 25 : 17;
   if (!landmarks || landmarks.length < needed) return null;
   const triple = JOINT_TRIPLES[joint] ?? JOINT_TRIPLES.knee;
   const preferred = preferLeft ? triple.left : triple.right;
@@ -221,14 +223,21 @@ export function sampleFromPose(
   const kneePoint = { x: b.x, y: b.y };
   const anklePoint = { x: c.x, y: c.y };
   const span = imageDistance(a, b) + imageDistance(b, c);
-  const flat = kneeAngleDegrees(hipPoint, kneePoint, anklePoint);
+  const flatRaw = kneeAngleDegrees(hipPoint, kneePoint, anklePoint);
   const worldA = worldLandmarks?.[pick[0]];
   const worldB = worldLandmarks?.[pick[1]];
   const worldC = worldLandmarks?.[pick[2]];
-  const depth = worldA && worldB && worldC ? spatialAngle(worldA, worldB, worldC, joint) : null;
+  const depthRaw = worldA && worldB && worldC ? spatialAngle(worldA, worldB, worldC, joint) : null;
+  const clinical = (value: number | null) => {
+    if (value == null || joint !== "shoulder") return value;
+    return Math.max(0, Math.min(180, 180 - value));
+  };
+  const flat = clinical(flatRaw);
+  const depth = clinical(depthRaw);
   const sideOn = imageDistance(a, b) + imageDistance(b, c) >= 0.22;
-  const angle = depth == null || (sideOn && Math.abs(depth - flat) > 25) ? flat : depth;
-  if (angle < 12) return null;
+  const angle = depth == null || (sideOn && flat != null && Math.abs(depth - flat) > 25) ? flat : depth;
+  if (angle == null) return null;
+  if (joint !== "shoulder" && angle < 12) return null;
   if (joint === "knee" ? angle > 178 : angle > 180) return null;
   const other = pick === preferred ? otherIds : preferred;
   const leftSide = pick === triple.left;
@@ -257,11 +266,34 @@ const MIN_SPAN: Record<KidsJoint, number> = {
   trunk: 0.24,
   ankle: 0.2,
   wrist: 0.12,
+  shoulder: 0.22,
 };
+
+const TILT_DEGREES = 12;
+
+/** Degrees the camera is rolled, when both shoulders or both hips are far enough apart to judge. */
+export function cameraRollDegrees(sample: MovementSample): number | null {
+  const pairs: Array<[Point | undefined, Point | undefined]> = [
+    [sample.shoulder, sample.oppositeShoulder],
+    [sample.hip, sample.oppositeHip],
+  ];
+  for (const [a, b] of pairs) {
+    if (!a || !b) continue;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    if (Math.hypot(dx, dy) < 0.12) continue;
+    let degrees = Math.abs((Math.atan2(dy, dx) * 180) / Math.PI);
+    if (degrees > 90) degrees = 180 - degrees;
+    return degrees;
+  }
+  return null;
+}
 
 /** A saved angle needs a clear joint, the requested side, and the limb inside the center of the picture. */
 export function poseIssue(sample: MovementSample, joint: KidsJoint, preferLeft: boolean): PoseIssue | null {
   if ((sample.visibility ?? 1) < 0.5) return "hidden";
+  const roll = cameraRollDegrees(sample);
+  if (roll != null && roll > TILT_DEGREES) return "tilt";
   if (sample.switchedSide || (sample.side != null && (sample.side === "left") !== preferLeft)) return "wrong-side";
   const span =
     sample.span ??
@@ -466,6 +498,7 @@ export function kidsJointForArea(areaId: string): KidsJoint {
   if (areaId === "ankle") return "ankle";
   if (areaId === "wrist") return "wrist";
   if (areaId === "lower-back") return "trunk";
+  if (areaId === "shoulder") return "shoulder";
   return "knee";
 }
 
@@ -479,6 +512,7 @@ const JOINT_TRIPLES: Record<KidsJoint, { left: [number, number, number]; right: 
   ankle: { left: [25, 27, 31], right: [26, 28, 32] },
   wrist: { left: [11, 13, 15], right: [12, 14, 16] },
   trunk: { left: [11, 23, 25], right: [12, 24, 26] },
+  shoulder: { left: [23, 11, 13], right: [24, 12, 14] },
 };
 
 type HandLandmarkerLike = {

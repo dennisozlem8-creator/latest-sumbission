@@ -104,7 +104,7 @@ const copy = {
     photoClipHelp: "Record a side-view clip so the coach can save today’s peak.",
     backToBriefing: "Back to briefing",
     photoHelp:
-      "Use a phone or laptop camera. Pick the same joint you measure with the sensors: knee, ankle, lower back, or wrist. The app finds the three points. If the pose is unclear, tap them.",
+      "Use a phone or laptop camera. Pick the same joint you measure with the sensors: knee, ankle, lower back, wrist, or shoulder. The app finds the three points. If the pose is unclear, tap them.",
     photoMarksHelp:
       "The three points for this joint are marked. The number is the angle at the middle point.",
     measuringPhoto: "Measuring this joint on the photo…",
@@ -116,6 +116,9 @@ const copy = {
     photoRetakeWrist: "Retake. Bring the hand closer until the fingers fill the box.",
     photoRetakeEdge: "Retake. Put the joint in the center of the picture.",
     photoRetakeSide: "Retake. The other side is in view. Turn the side you selected toward the camera.",
+    photoRetakeTilt: "Retake. The phone is tilted. Hold it level, then try again.",
+    photoRetakeShoulder: "Retake. Step back until the hip, shoulder, and elbow fill the box.",
+    offlineBanner: "You are offline. This session stays on this phone and sends when the connection returns.",
     photoSensorGap:
       "The Bluetooth reading today was {motion}°. This photo is {gap}° away. Set one of them up again before you trust the number.",
     finger: "Finger",
@@ -278,18 +281,18 @@ const copy = {
     improve: "Improve",
     threeSteps: "Three steps on this device",
     threeStepsText:
-      "Take a photo on a phone or laptop. Pick knee, ankle, lower back, or wrist — the same joints as the sensors. Then do today’s session.",
+      "Take a photo on a phone or laptop. Pick knee, ankle, lower back, wrist, or shoulder — the same joints as the sensors. Then do today’s session.",
     stepPhotoTitle: "Take a side-view photo",
     stepPhotoText: "A helper photographs the seated joint. Use a phone or laptop camera.",
     stepMarksTitle: "Three points on the joint",
     stepMarksText:
-      "The app finds the three points for the knee, ankle, lower back, or wrist. If the pose is unclear, tap them. Then it shows the angle.",
+      "The app finds the three points for the knee, ankle, lower back, wrist, or shoulder. If the pose is unclear, tap them. Then it shows the angle.",
     stepSessionTitle: "Do today’s session",
     stepSessionText: "Follow the exercises your clinician set for today.",
     chooseOneWay: "Choose one way to measure",
     oneSensorEnough: "You only need one: a phone camera, a Bluetooth motion sensor, or a Bluetooth muscle sensor.",
     wayPhotoTitle: "Phone or laptop camera",
-    wayPhotoText: "Side-view photo or short video. Knee, ankle, lower back, or wrist.",
+    wayPhotoText: "Side-view photo or short video. Knee, ankle, lower back, wrist, or shoulder.",
     wayMotionTitle: "Bluetooth motion sensor",
     wayMotionText: "Angle during the prescribed movement.",
     wayMuscleTitle: "Bluetooth muscle sensor",
@@ -689,7 +692,7 @@ const copy = {
     photoClipHelp: "Graba un clip de lado para que el entrenador guarde el pico de hoy.",
     backToBriefing: "Volver al resumen",
     photoHelp:
-      "Usa la cámara del teléfono o de la computadora. Elige la misma zona que mides con los sensores: rodilla, tobillo, espalda baja o muñeca. La app encuentra los tres puntos. Si la pose no es clara, tócalos.",
+      "Usa la cámara del teléfono o de la computadora. Elige la misma zona que mides con los sensores: rodilla, tobillo, espalda baja, muñeca u hombro. La app encuentra los tres puntos. Si la pose no es clara, tócalos.",
     photoMarksHelp:
       "Los tres puntos de esta articulación están marcados. El número es el ángulo en el punto del medio.",
     measuringPhoto: "Midiendo esta articulación en la foto…",
@@ -701,6 +704,9 @@ const copy = {
     photoRetakeWrist: "Toma otra. Acerca la mano hasta que los dedos llenen el recuadro.",
     photoRetakeEdge: "Toma otra. Pon la articulación en el centro de la foto.",
     photoRetakeSide: "Toma otra. Se ve el otro lado. Gira el lado que elegiste hacia la cámara.",
+    photoRetakeTilt: "Toma otra. El teléfono está inclinado. Nivelalo y vuelve a intentar.",
+    photoRetakeShoulder: "Toma otra. Aléjate hasta que la cadera, el hombro y el codo llenen el recuadro.",
+    offlineBanner: "Estás sin conexión. Esta sesión se queda en este teléfono y se envía cuando vuelva la conexión.",
     photoSensorGap:
       "La lectura Bluetooth de hoy fue {motion}°. Esta foto está a {gap}°. Prepara una de las dos otra vez antes de confiar en el número.",
     finger: "Dedo",
@@ -863,18 +869,18 @@ const copy = {
     improve: "Mejora",
     threeSteps: "Tres pasos en este dispositivo",
     threeStepsText:
-      "Toma una foto con el teléfono o la computadora. Elige rodilla, tobillo, espalda baja o muñeca — las mismas zonas que los sensores. Luego haz la sesión de hoy.",
+      "Toma una foto con el teléfono o la computadora. Elige rodilla, tobillo, espalda baja, muñeca u hombro — las mismas zonas que los sensores. Luego haz la sesión de hoy.",
     stepPhotoTitle: "Toma una foto de lado",
     stepPhotoText: "Alguien fotografía la articulación sentada. Usa la cámara del teléfono o de la computadora.",
     stepMarksTitle: "Tres puntos en la articulación",
     stepMarksText:
-      "La app encuentra los tres puntos de la rodilla, el tobillo, la espalda baja o la muñeca. Si la pose no es clara, tócalos. Luego muestra el ángulo.",
+      "La app encuentra los tres puntos de la rodilla, el tobillo, la espalda baja, la muñeca o el hombro. Si la pose no es clara, tócalos. Luego muestra el ángulo.",
     stepSessionTitle: "Haz la sesión de hoy",
     stepSessionText: "Sigue los ejercicios que tu clínico indicó para hoy.",
     chooseOneWay: "Elige una forma de medir",
     oneSensorEnough: "Solo necesitas uno: la cámara del teléfono, un sensor de movimiento Bluetooth o un sensor muscular Bluetooth.",
     wayPhotoTitle: "Cámara del teléfono o computadora",
-    wayPhotoText: "Foto o video corto de lado. Rodilla, tobillo, espalda baja o muñeca.",
+    wayPhotoText: "Foto o video corto de lado. Rodilla, tobillo, espalda baja, muñeca u hombro.",
     wayMotionTitle: "Sensor de movimiento Bluetooth",
     wayMotionText: "Ángulo durante el movimiento prescrito.",
     wayMuscleTitle: "Sensor muscular Bluetooth",
