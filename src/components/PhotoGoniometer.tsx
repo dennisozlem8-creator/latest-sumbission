@@ -15,6 +15,7 @@ import {
   loadMeasurements,
   nextLandmark,
   persistMeasurement,
+  sameDayMotionGap,
   type GoniometerMeasurement,
 } from "@/lib/goniometer";
 import {
@@ -25,10 +26,14 @@ import {
   getPoseLandmarker,
   orientedImageUrl,
   pickRecorderMime,
+  poseIssue,
+  readStillCanvases,
   refineMovementSamples,
   stableAngle,
   summarizeMovement,
   type MovementSample,
+  type PhotoPoseResult,
+  type PoseIssue,
 } from "@/lib/pose-goniometer";
 import { coachMovement, coachPhotoPose } from "@/lib/movement-coach";
 import { GoniometerProgressChart } from "./GoniometerProgressChart";
@@ -45,6 +50,7 @@ const POINT_COPY: Record<string, CopyKey> = {
   Elbow: "elbow",
   Wrist: "wrist",
   Toe: "toe",
+  Finger: "finger",
 };
 
 function labelsFor(kind: MeasuredJoint, locale: Locale): Record<LandmarkId, string> {
@@ -341,6 +347,7 @@ export function PhotoGoniometer({
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [photoAnalyzing, setPhotoAnalyzing] = useState(false);
+  const [holdingStill, setHoldingStill] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [rows, setRows] = useState<GoniometerMeasurement[]>([]);
   const analysisRef = useRef<HTMLElement>(null);
@@ -363,6 +370,11 @@ export function PhotoGoniometer({
     () => (samples.length >= 4 ? coachMovement(samples, exercise, joint, goal, rows) : null),
     [samples, exercise, joint, goal, rows]
   );
+  const sensorGap = useMemo(() => {
+    const angle = photoAngle ?? movement?.peak ?? null;
+    if (angle == null) return null;
+    return sameDayMotionGap(rows, joint, angle);
+  }, [photoAngle, movement, rows, joint]);
   const photoCoach = useMemo(() => {
     if (photoAngle == null || !points.hip || !points.knee || !points.ankle) return null;
     return coachPhotoPose(photoAngle, points.hip, points.knee, points.ankle, exercise, joint);
@@ -510,21 +522,24 @@ export function PhotoGoniometer({
         const elapsed = recordingRef.current
           ? (performance.now() - recordStartedRef.current) / 1000
           : 0;
+        const liveJoint = measuredJointFromLabel(jointRef.current);
         const sample = detectVideoFrame(
           landmarker,
           video,
           performance.now(),
           preferLeftRef.current,
           Number(elapsed.toFixed(2)),
-          measuredJointFromLabel(jointRef.current)
+          liveJoint
         );
-        const stable = sample
-          ? { ...sample, angle: stableAngle(liveAnglesRef.current, sample.angle) }
+        const usable = sample && poseIssue(sample, liveJoint, preferLeftRef.current) == null ? sample : null;
+        const stable = usable
+          ? { ...usable, angle: stableAngle(liveAnglesRef.current, usable.angle) }
           : null;
         if (stable && recordingRef.current) {
           samplesRef.current.push(stable);
         }
         if (stable) setLiveAngle(stable.angle);
+        else setLiveAngle(null);
         if (canvas) drawPose(canvas, video, stable, stable?.angle ?? null);
         if (recordingRef.current) {
           const nextSec = Math.min(MAX_RECORD_SEC, Math.floor(elapsed));
@@ -649,22 +664,40 @@ export function PhotoGoniometer({
     }
   }
 
+  function retakeMessage(issue: PoseIssue) {
+    if (issue === "hidden") return t("photoRetakeHidden", locale);
+    if (issue === "edge") return t("photoRetakeEdge", locale);
+    if (issue === "wrong-side") return t("photoRetakeSide", locale);
+    if (poseJoint === "ankle") return t("photoRetakeAnkle", locale);
+    if (poseJoint === "wrist") return t("photoRetakeWrist", locale);
+    return t("photoRetakeSmall", locale);
+  }
+
+  function applyStill(found: PhotoPoseResult | null) {
+    if (!found) {
+      setPoints({});
+      setCameraError(
+        `Could not see the ${pointList.toLowerCase()} in that photo. Mark the points, or take another side-view shot.`
+      );
+      return;
+    }
+    if (found.issue) {
+      setPoints({});
+      setCameraError(retakeMessage(found.issue));
+      return;
+    }
+    setPoints({ hip: found.hip, knee: found.knee, ankle: found.ankle });
+    setCameraError("");
+    scrollToAnalysis();
+  }
+
   async function runPhotoAnalysis(url: string) {
     setPhotoAnalyzing(true);
     setCameraError("");
     setSaved(false);
     setSaveMessage("");
     try {
-      const found = await analyzeImageUrl(url, preferLeft, poseJoint);
-      if (!found) {
-        setPoints({});
-        setCameraError(
-          `Could not see the ${pointList.toLowerCase()} in that photo. Mark the points, or take another side-view shot.`
-        );
-        return;
-      }
-      setPoints({ hip: found.hip, knee: found.knee, ankle: found.ankle });
-      scrollToAnalysis();
+      applyStill(await analyzeImageUrl(url, preferLeft, poseJoint));
     } catch (error) {
       setPoints({});
       setCameraError(
@@ -679,22 +712,48 @@ export function PhotoGoniometer({
 
   async function captureStill() {
     const video = videoRef.current;
-    if (!video?.videoWidth) {
-      setCameraError("Wait for the camera picture to appear, then take the photo.");
+    if (!video?.videoWidth || holdingStill) {
+      if (!video?.videoWidth) setCameraError("Wait for the camera picture to appear, then take the photo.");
       return;
     }
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.92)
-    );
-    if (!blob) return;
-    stopCamera();
-    onPhotoFile(new File([blob], "knee-photo.jpg", { type: "image/jpeg" }));
+    setHoldingStill(true);
+    setCameraError("");
+    const frames: HTMLCanvasElement[] = [];
+    try {
+      for (let index = 0; index < 5; index += 1) {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(video, 0, 0);
+        frames.push(canvas);
+        if (index < 4) await new Promise((resolve) => window.setTimeout(resolve, 200));
+      }
+      const blob = await new Promise<Blob | null>((resolve) => frames[frames.length - 1]?.toBlob(resolve, "image/jpeg", 0.92));
+      if (!blob) return;
+      stopCamera();
+      if (photoUrl) URL.revokeObjectURL(photoUrl);
+      const url = URL.createObjectURL(blob);
+      setPhotoUrl(url);
+      setVideoReady(false);
+      setPoints({});
+      setSamples([]);
+      setSaved(false);
+      setSaveMessage("");
+      setStep("upload");
+      setPhotoAnalyzing(true);
+      try {
+        applyStill(await readStillCanvases(frames, preferLeft, poseJoint));
+      } catch (error) {
+        setPoints({});
+        setCameraError(error instanceof Error ? error.message : "Could not analyze that photo. Mark the points by hand.");
+      } finally {
+        setPhotoAnalyzing(false);
+      }
+    } finally {
+      setHoldingStill(false);
+    }
   }
 
   async function onPhotoFile(file: File | undefined) {
@@ -862,22 +921,34 @@ export function PhotoGoniometer({
             </label>
           </div>
           <p className="mt-3 text-sm text-muted">
-            Side view. The camera marks {pointList.toLowerCase()} — or you tap those three points.
+            Side view. {t("photoGuide", locale)} The camera marks {pointList.toLowerCase()} — or you tap those three points.
           </p>
 
           <div className="relative mt-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-black">
-            <video
-              ref={bindVideo}
-              autoPlay
-              playsInline
-              muted
-              controls={false}
-              className={liveCamera ? "max-h-80 w-full bg-black object-contain" : "hidden"}
-            />
-            <canvas
-              ref={overlayRef}
-              className={liveCamera ? "pointer-events-none absolute inset-0 h-full w-full" : "hidden"}
-            />
+            <div className="relative">
+              <video
+                ref={bindVideo}
+                autoPlay
+                playsInline
+                muted
+                controls={false}
+                className={liveCamera ? "max-h-80 w-full bg-black object-contain" : "hidden"}
+              />
+              <canvas
+                ref={overlayRef}
+                className={liveCamera ? "pointer-events-none absolute inset-0 h-full w-full" : "hidden"}
+              />
+              {liveCamera && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="h-[64%] w-[52%] rounded-[1.5rem] border-2 border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,0.28)]" />
+                  {holdingStill && (
+                    <p className="absolute rounded-full bg-[#1b3348] px-4 py-2 text-sm font-semibold text-white">
+                      {t("photoHold", locale)}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
             {liveCamera ? (
               <div className="flex flex-col gap-3 bg-background p-3">
                 {recording && (
@@ -896,8 +967,13 @@ export function PhotoGoniometer({
                       <button type="button" className="rm-btn rm-btn-primary flex-1" onClick={startRecording}>
                         {t("recordMovement", locale)}
                       </button>
-                      <button type="button" className="rm-btn rm-btn-brand flex-1" onClick={() => void captureStill()}>
-                        {t("takePhoto", locale)}
+                      <button
+                        type="button"
+                        className="rm-btn rm-btn-brand flex-1 disabled:opacity-40"
+                        disabled={holdingStill}
+                        onClick={() => void captureStill()}
+                      >
+                        {holdingStill ? t("photoHold", locale) : t("takePhoto", locale)}
                       </button>
                     </>
                   )}
@@ -1228,6 +1304,11 @@ export function PhotoGoniometer({
                 </div>
               )}
               <p className="rm-display mt-4 text-correct">{photoAngle}°</p>
+              {sensorGap && (
+                <p className="mt-3 text-sm leading-6 text-alert">
+                  {tf("photoSensorGap", locale, { motion: sensorGap.motion, gap: sensorGap.gap })}
+                </p>
+              )}
               {photoCoach && (
                 <MovementCoachCard
                   report={photoCoach}
@@ -1271,6 +1352,11 @@ export function PhotoGoniometer({
                   <p className="rm-label mt-1">Range</p>
                 </div>
               </div>
+              {sensorGap && photoAngle == null && (
+                <p className="mt-3 text-sm leading-6 text-alert">
+                  {tf("photoSensorGap", locale, { motion: sensorGap.motion, gap: sensorGap.gap })}
+                </p>
+              )}
               <div className="mt-4">
                 <MovementChart
                   samples={samples}

@@ -108,6 +108,17 @@ const copy = {
     photoMarksHelp:
       "The three points for this joint are marked. The number is the angle at the middle point.",
     measuringPhoto: "Measuring this joint on the photo…",
+    photoGuide: "Keep the joint inside the center box, large enough to see.",
+    photoHold: "Hold still. Reading a few frames…",
+    photoRetakeHidden: "Retake. The joint is hidden or out of the picture.",
+    photoRetakeSmall: "Retake. Move closer so the joint fills the box.",
+    photoRetakeAnkle: "Retake. Bring the foot closer until it fills the box, toes included.",
+    photoRetakeWrist: "Retake. Bring the hand closer until the fingers fill the box.",
+    photoRetakeEdge: "Retake. Put the joint in the center of the picture.",
+    photoRetakeSide: "Retake. The other side is in view. Turn the side you selected toward the camera.",
+    photoSensorGap:
+      "The Bluetooth reading today was {motion}°. This photo is {gap}° away. Set one of them up again before you trust the number.",
+    finger: "Finger",
     notADiagnosis:
       "Estimated angle for progress tracking only. This is not a diagnosis and does not replace a physical therapist.",
     openProgressCharts: "Open progress charts",
@@ -682,6 +693,17 @@ const copy = {
     photoMarksHelp:
       "Los tres puntos de esta articulación están marcados. El número es el ángulo en el punto del medio.",
     measuringPhoto: "Midiendo esta articulación en la foto…",
+    photoGuide: "Mantén la articulación dentro del recuadro del centro, lo bastante grande para verla.",
+    photoHold: "Quédate quieto. Leyendo varios cuadros…",
+    photoRetakeHidden: "Toma otra. La articulación está tapada o fuera de la foto.",
+    photoRetakeSmall: "Toma otra. Acércate para que la articulación llene el recuadro.",
+    photoRetakeAnkle: "Toma otra. Acerca el pie hasta que llene el recuadro, con los dedos visibles.",
+    photoRetakeWrist: "Toma otra. Acerca la mano hasta que los dedos llenen el recuadro.",
+    photoRetakeEdge: "Toma otra. Pon la articulación en el centro de la foto.",
+    photoRetakeSide: "Toma otra. Se ve el otro lado. Gira el lado que elegiste hacia la cámara.",
+    photoSensorGap:
+      "La lectura Bluetooth de hoy fue {motion}°. Esta foto está a {gap}°. Prepara una de las dos otra vez antes de confiar en el número.",
+    finger: "Dedo",
     notADiagnosis:
       "El ángulo es solo para seguir el progreso. No es un diagnóstico y no sustituye a un fisioterapeuta.",
     openProgressCharts: "Abrir gráficas de progreso",

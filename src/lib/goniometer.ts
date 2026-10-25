@@ -66,7 +66,7 @@ export function measuredJointFromLabel(label: string): MeasuredJoint {
 /** Proximal, joint, and distal names. Stored in the hip / knee / ankle point slots. */
 export function pointLabelsForJoint(joint: MeasuredJoint): Record<LandmarkId, string> {
   if (joint === "ankle") return { hip: "Knee", knee: "Ankle", ankle: "Toe" };
-  if (joint === "wrist") return { hip: "Shoulder", knee: "Elbow", ankle: "Wrist" };
+  if (joint === "wrist") return { hip: "Elbow", knee: "Wrist", ankle: "Finger" };
   if (joint === "trunk") return { hip: "Shoulder", knee: "Hip", ankle: "Knee" };
   return LANDMARK_LABELS;
 }
@@ -102,6 +102,25 @@ export function loadAllMeasurements(): GoniometerMeasurement[] {
   } catch {
     return [];
   }
+}
+
+function localDay(iso: string) {
+  const date = new Date(iso);
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+/** Today's Bluetooth reading for the same joint, when it disagrees with the photo by more than 15°. */
+export function sameDayMotionGap(rows: GoniometerMeasurement[], jointLabel: string, angle: number, now = new Date()) {
+  const today = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+  const joint = measuredJointFromLabel(jointLabel);
+  const motions = rows.filter(
+    (row) => row.source === "motion" && row.date && localDay(row.date) === today && measuredJointFromLabel(row.joint) === joint
+  );
+  const latest = motions[motions.length - 1];
+  if (!latest) return null;
+  const gap = Math.abs(latest.angle - angle);
+  if (gap <= 15) return null;
+  return { motion: latest.angle, gap };
 }
 
 export function loadMeasurements(userEmail: string): GoniometerMeasurement[] {

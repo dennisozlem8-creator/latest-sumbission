@@ -13,7 +13,13 @@ export type MovementSample = {
   shoulder?: Point;
   oppositeShoulder?: Point;
   visibility?: number;
+  /** Length of the two limb segments in the picture, 0–2. */
+  span?: number;
+  /** The requested side was not visible, so the other side was in frame. */
+  switchedSide?: boolean;
 };
+
+export type PoseIssue = "hidden" | "small" | "edge" | "wrong-side";
 
 export type MovementSummary = {
   peak: number;
@@ -35,6 +41,7 @@ type PoseLandmarkerLike = {
     video: HTMLVideoElement,
     timestamp: number
   ) => { landmarks?: PoseLandmark[][]; worldLandmarks?: PoseLandmark[][] };
+  detect: (image: HTMLCanvasElement) => { landmarks?: PoseLandmark[][]; worldLandmarks?: PoseLandmark[][] };
   close?: () => void;
 };
 
@@ -52,6 +59,8 @@ function landmarkerOptions(runningMode: "VIDEO" | "IMAGE", delegate: "GPU" | "CP
 const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm";
 const MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
+const HAND_URL =
+  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 
 let landmarkerPromise: Promise<PoseLandmarkerLike> | null = null;
 
@@ -211,6 +220,7 @@ export function sampleFromPose(
   const hipPoint = { x: a.x, y: a.y };
   const kneePoint = { x: b.x, y: b.y };
   const anklePoint = { x: c.x, y: c.y };
+  const span = imageDistance(a, b) + imageDistance(b, c);
   const flat = kneeAngleDegrees(hipPoint, kneePoint, anklePoint);
   const worldA = worldLandmarks?.[pick[0]];
   const worldB = worldLandmarks?.[pick[1]];
@@ -237,7 +247,30 @@ export function sampleFromPose(
     shoulder: asPoint(sameShoulder),
     oppositeShoulder: asPoint(otherShoulder),
     visibility: (visibilityOf(a) + visibilityOf(b) + visibilityOf(c)) / 3,
+    span,
+    switchedSide: pick !== preferred,
   };
+}
+
+const MIN_SPAN: Record<KidsJoint, number> = {
+  knee: 0.22,
+  trunk: 0.24,
+  ankle: 0.2,
+  wrist: 0.12,
+};
+
+/** A saved angle needs a clear joint, the requested side, and the limb inside the center of the picture. */
+export function poseIssue(sample: MovementSample, joint: KidsJoint, preferLeft: boolean): PoseIssue | null {
+  if ((sample.visibility ?? 1) < 0.5) return "hidden";
+  if (sample.switchedSide || (sample.side != null && (sample.side === "left") !== preferLeft)) return "wrong-side";
+  const span =
+    sample.span ??
+    Math.hypot(sample.hip.x - sample.knee.x, sample.hip.y - sample.knee.y) +
+      Math.hypot(sample.ankle.x - sample.knee.x, sample.ankle.y - sample.knee.y);
+  if (span < MIN_SPAN[joint]) return "small";
+  const { x, y } = sample.knee;
+  if (x < 0.18 || x > 0.82 || y < 0.18 || y > 0.82) return "edge";
+  return null;
 }
 
 function asPoint(landmark?: PoseLandmark): Point | undefined {
@@ -393,7 +426,8 @@ export async function analyzeVideoElement(
   }
 
   onProgress?.(100);
-  return refineMovementSamples(samples);
+  const clear = samples.filter((sample) => poseIssue(sample, joint, preferLeft) == null);
+  return refineMovementSamples(clear);
 }
 
 export async function analyzeVideoUrl(
@@ -422,6 +456,8 @@ export type PhotoPoseResult = {
   hip: Point;
   knee: Point;
   ankle: Point;
+  /** Set when the picture should be retaken and the angle withheld. */
+  issue: PoseIssue | null;
 };
 
 export type KidsJoint = MeasuredJoint;
@@ -445,6 +481,17 @@ const JOINT_TRIPLES: Record<KidsJoint, { left: [number, number, number]; right: 
   trunk: { left: [11, 23, 25], right: [12, 24, 26] },
 };
 
+type HandLandmarkerLike = {
+  detect: (image: HTMLCanvasElement) => {
+    landmarks?: PoseLandmark[][];
+    handedness?: { categoryName?: string }[][];
+  };
+  close?: () => void;
+};
+
+let imageLandmarkerPromise: Promise<PoseLandmarkerLike> | null = null;
+let handLandmarkerPromise: Promise<HandLandmarkerLike | null> | null = null;
+
 async function createImageLandmarker() {
   const vision = await import("@mediapipe/tasks-vision");
   const fileset = await vision.FilesetResolver.forVisionTasks(WASM_URL);
@@ -453,6 +500,136 @@ async function createImageLandmarker() {
   } catch {
     return vision.PoseLandmarker.createFromOptions(fileset, landmarkerOptions("IMAGE", "CPU"));
   }
+}
+
+function getImageLandmarker() {
+  if (!imageLandmarkerPromise) {
+    imageLandmarkerPromise = createImageLandmarker().catch((error) => {
+      imageLandmarkerPromise = null;
+      throw error;
+    });
+  }
+  return imageLandmarkerPromise;
+}
+
+async function createHandLandmarker(): Promise<HandLandmarkerLike | null> {
+  try {
+    const vision = await import("@mediapipe/tasks-vision");
+    const fileset = await vision.FilesetResolver.forVisionTasks(WASM_URL);
+    const options = (delegate: "GPU" | "CPU") => ({
+      baseOptions: { modelAssetPath: HAND_URL, delegate },
+      runningMode: "IMAGE" as const,
+      numHands: 2,
+      minHandDetectionConfidence: 0.5,
+      minHandPresenceConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+    try {
+      return await vision.HandLandmarker.createFromOptions(fileset, options("GPU"));
+    } catch {
+      return await vision.HandLandmarker.createFromOptions(fileset, options("CPU"));
+    }
+  } catch {
+    return null;
+  }
+}
+
+function getHandLandmarker() {
+  if (!handLandmarkerPromise) {
+    handLandmarkerPromise = createHandLandmarker();
+  }
+  return handLandmarkerPromise;
+}
+
+/** Wrist angle is elbow → wrist → middle finger, so the hand has to be close enough to see. */
+function wristFromHand(
+  sample: MovementSample,
+  hands: { landmarks?: PoseLandmark[][]; handedness?: { categoryName?: string }[][] },
+  preferLeft: boolean
+): MovementSample {
+  const want = preferLeft ? "left" : "right";
+  let best = -1;
+  let bestSpan = 0;
+  const landmarks = hands.landmarks ?? [];
+  landmarks.forEach((hand, index) => {
+    const name = (hands.handedness?.[index]?.[0]?.categoryName ?? "").toLowerCase();
+    if (name && !name.includes(want)) return;
+    const wrist = hand[0];
+    const finger = hand[9];
+    if (!wrist || !finger) return;
+    const span = Math.hypot(wrist.x - finger.x, wrist.y - finger.y);
+    if (span > bestSpan) {
+      bestSpan = span;
+      best = index;
+    }
+  });
+  if (best < 0 || bestSpan < 0.08) {
+    return { ...sample, span: bestSpan || 0.01 };
+  }
+  const wrist = landmarks[best][0];
+  const finger = landmarks[best][9];
+  const elbow = sample.knee;
+  const wristPoint = { x: wrist.x, y: wrist.y };
+  const fingerPoint = { x: finger.x, y: finger.y };
+  return {
+    ...sample,
+    hip: elbow,
+    knee: wristPoint,
+    ankle: fingerPoint,
+    angle: kneeAngleDegrees(elbow, wristPoint, fingerPoint),
+    span: bestSpan + Math.hypot(elbow.x - wrist.x, elbow.y - wrist.y),
+    side: preferLeft ? "left" : "right",
+    switchedSide: false,
+  };
+}
+
+function majorityIssue(samples: MovementSample[], joint: KidsJoint, preferLeft: boolean): PoseIssue {
+  const counts = new Map<PoseIssue, number>();
+  for (const sample of samples) {
+    const issue = poseIssue(sample, joint, preferLeft) ?? "hidden";
+    counts.set(issue, (counts.get(issue) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "hidden";
+}
+
+/** Read one or more still frames in photo mode and keep the middle angle. */
+export async function readStillCanvases(
+  canvases: HTMLCanvasElement[],
+  preferLeft: boolean,
+  joint: KidsJoint = "knee"
+): Promise<PhotoPoseResult | null> {
+  if (canvases.length === 0) return null;
+  const pose = await getImageLandmarker();
+  const hands = joint === "wrist" ? await getHandLandmarker() : null;
+  const reads: MovementSample[] = [];
+  for (const canvas of canvases) {
+    const result = pose.detect(canvas);
+    let sample = sampleFromPose(result.landmarks?.[0], preferLeft, 0, joint, result.worldLandmarks?.[0]);
+    if (!sample) continue;
+    if (joint === "wrist") {
+      sample = hands ? wristFromHand(sample, hands.detect(canvas), preferLeft) : { ...sample, span: 0.01 };
+    }
+    reads.push(sample);
+  }
+  if (reads.length === 0) return null;
+  const good = reads.filter((sample) => poseIssue(sample, joint, preferLeft) == null);
+  const needed = canvases.length >= 4 ? 2 : 1;
+  if (good.length < needed) {
+    const fallback = reads[0];
+    return {
+      angle: fallback.angle,
+      hip: fallback.hip,
+      knee: fallback.knee,
+      ankle: fallback.ankle,
+      issue: majorityIssue(reads, joint, preferLeft),
+    };
+  }
+  const angles = good.map((sample) => sample.angle).sort((a, b) => a - b);
+  const median = angles[Math.floor(angles.length / 2)];
+  const chosen = good.reduce((best, sample) =>
+    Math.abs(sample.angle - median) < Math.abs(best.angle - median) ? sample : best
+  );
+  return { angle: median, hip: chosen.hip, knee: chosen.knee, ankle: chosen.ankle, issue: null };
 }
 
 export async function orientedImageUrl(file: Blob) {
@@ -480,29 +657,19 @@ export async function analyzeImageUrl(
   preferLeft: boolean,
   joint: KidsJoint = "knee"
 ): Promise<PhotoPoseResult | null> {
-  const landmarker = await createImageLandmarker();
-  try {
-    const blob = await fetch(imageUrl).then((response) => response.blob());
-    const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
-    const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(bitmap, 0, 0);
+  const blob = await fetch(imageUrl).then((response) => response.blob());
+  const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
     bitmap.close();
-    const result = landmarker.detect(canvas);
-    const sample = sampleFromPose(result.landmarks?.[0], preferLeft, 0, joint, result.worldLandmarks?.[0]);
-    if (!sample) return null;
-    return {
-      angle: sample.angle,
-      hip: sample.hip,
-      knee: sample.knee,
-      ankle: sample.ankle,
-    };
-  } finally {
-    landmarker.close();
+    return null;
   }
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  return readStillCanvases([canvas], preferLeft, joint);
 }
 
 export function pickRecorderMime() {
