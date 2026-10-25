@@ -14,15 +14,42 @@ import {
 } from "@/lib/measure-method";
 import type { PTPrescription } from "@/lib/users";
 
-function StepLink({ href, step, title, text }: { href: string; step: string; title: string; text: string }) {
+function StepLink({
+  href,
+  step,
+  title,
+  text,
+  primary = false,
+}: {
+  href: string;
+  step: string;
+  title: string;
+  text: string;
+  primary?: boolean;
+}) {
   return (
     <Link
       href={href}
-      className="flex flex-1 flex-col justify-center rounded-[1.35rem] bg-white px-5 py-4 shadow-[0_14px_32px_rgba(27,51,72,0.07)] ring-1 ring-[#4f90c6]/12 transition hover:bg-[#f7fbfe]"
+      className={
+        primary
+          ? "flex flex-1 flex-col justify-between gap-4 rounded-[1.35rem] bg-[#1b3348] px-5 py-5 text-white shadow-[0_16px_36px_rgba(27,51,72,0.22)]"
+          : "flex flex-1 flex-col justify-between gap-4 rounded-[1.35rem] border-2 border-[#1b3348] bg-white px-5 py-5 text-[#1b3348] shadow-[0_14px_32px_rgba(27,51,72,0.08)]"
+      }
     >
-      <p className="text-sm font-semibold text-[#4f90c6]">{step}</p>
-      <p className="rm-serif mt-1 text-xl font-semibold text-[#1b3348]">{title}</p>
-      <p className="mt-1 text-sm leading-5 text-[#2f4a60]">{text}</p>
+      <div>
+        <p className={`text-sm font-semibold ${primary ? "text-[#d7ebf7]" : "text-[#2f4a60]"}`}>{step}</p>
+        <p className={`mt-1 text-sm leading-5 ${primary ? "text-white/90" : "text-[#2f4a60]"}`}>{text}</p>
+      </div>
+      <span
+        className={`inline-flex h-14 w-full items-center justify-center rounded-full text-base font-semibold ${
+          primary ? "bg-[#4f90c6] text-white" : "bg-[#1b3348] text-white"
+        }`}
+      >
+        {title}
+        <span aria-hidden className="ml-2">
+          →
+        </span>
+      </span>
     </Link>
   );
 }
@@ -54,17 +81,25 @@ export function DailyPath({
     <section>
       <h2 className="rm-serif text-2xl font-semibold text-[#1b3348]">{t("dailyPathTitle", locale)}</h2>
       <p className="mt-1 text-base text-[#2f4a60]">{t("dailyPathText", locale)}</p>
-      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.75fr)]">
+      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.8fr)]">
         <DashPhotoLink
           href={methodHref[method]}
           src={methodImage[method]}
           kicker={`1 · ${t("stepMethod", locale)}`}
           title={t(methodTitleKey[method], locale)}
           text={t(methodTextKey[method], locale)}
+          action={t("navMeasure", locale)}
           imgClassName={method === "motion" ? "object-cover object-[left_40%]" : "object-cover object-center"}
+          className="order-2 lg:order-1"
         />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          <StepLink href="/pain-check" step={`2 · ${t("liveSession", locale)}`} title={t("stepSession", locale)} text={t("pathSessionText", locale)} />
+        <div className="order-1 grid gap-3 sm:grid-cols-2 lg:order-2 lg:grid-cols-1">
+          <StepLink
+            href="/pain-check"
+            step={`2 · ${t("liveSession", locale)}`}
+            title={t("stepSession", locale)}
+            text={t("pathSessionText", locale)}
+            primary
+          />
           <StepLink href="/report" step={`3 · ${t("reportKicker", locale)}`} title={t("stepReport", locale)} text={t("stepReportText", locale)} />
         </div>
       </div>

@@ -181,26 +181,38 @@ export function DashPhotoLink({
   kicker,
   title,
   text,
+  action,
   imgClassName = "object-cover object-center",
+  className = "",
 }: {
   href: string;
   src: string;
   kicker: string;
   title: string;
   text: string;
+  action?: string;
   imgClassName?: string;
+  className?: string;
 }) {
   return (
     <Link
       href={href}
-      className="group relative isolate block min-h-[14rem] overflow-hidden rounded-[1.35rem] shadow-[0_14px_32px_rgba(27,51,72,0.1)]"
+      className={`group relative isolate block min-h-[14rem] overflow-hidden rounded-[1.35rem] shadow-[0_14px_32px_rgba(27,51,72,0.1)] ${className}`}
     >
       <SafePicture src={src} alt="" className={`absolute inset-0 h-full w-full ${imgClassName}`} />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1b3348]/85 via-[#1b3348]/20 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1b3348]/85 via-[#1b3348]/25 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-5">
         <p className="text-sm font-semibold text-white/85">{kicker}</p>
         <h3 className="rm-serif mt-0.5 text-xl font-semibold leading-tight sm:text-2xl">{title}</h3>
         <p className="mt-1 text-sm leading-5 text-white/90">{text}</p>
+        {action ? (
+          <span className="mt-4 inline-flex h-12 items-center rounded-full bg-white px-5 text-base font-semibold text-[#1b3348]">
+            {action}
+            <span aria-hidden className="ml-2">
+              →
+            </span>
+          </span>
+        ) : null}
       </div>
     </Link>
   );
