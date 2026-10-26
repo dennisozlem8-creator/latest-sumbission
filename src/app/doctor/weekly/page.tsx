@@ -8,7 +8,7 @@ import { DemoBanner } from "@/components/DemoBanner";
 import { WeeklyUpdateCard } from "@/components/WeeklyUpdateCard";
 import { useAuth } from "@/components/AuthProvider";
 import { loadMeasurements } from "@/lib/goniometer";
-import { clinicLocale } from "@/lib/i18n";
+import { clinicLocale, loadDeviceLocale, t, tf } from "@/lib/i18n";
 import { ensureWeeklyUpdateNotice } from "@/lib/notifications";
 import { isCareTeam } from "@/lib/users";
 import { weeklyPatientUpdate } from "@/lib/weekly-update";
@@ -34,26 +34,26 @@ function WeeklyUpdates() {
   if (!isCareTeam(user?.role)) {
     return (
       <div className="flex min-h-full flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-[#2f4a60]">This page is for doctors and caregivers.</p>
+        <p className="text-[#2f4a60]">{t("clinicOnly", locale)}</p>
         <Link href="/" className="font-semibold text-[#1b3348]">
-          Go home
+          {t("goHome", locale)}
         </Link>
       </div>
     );
   }
 
-  const roleLabel = user?.role === "caregiver" ? "Caregiver" : "Clinician";
+  const roleLabel = user?.role === "caregiver" ? t("roleCaregiver", locale) : t("roleClinician", locale);
 
   return (
     <DashShell caregiver>
       <DemoBanner locale={locale} />
       <DashIntro
-        kicker={`${roleLabel} · past 7 days`}
-        title="Weekly patient updates"
-        text="Each note uses the readings saved on this device. It compares the past 7 days with the 7 days before that."
+        kicker={tf("weeklyRoleDays", locale, { role: roleLabel })}
+        title={t("weeklyTitle", locale)}
+        text={t("weeklyText", locale)}
         action={
           <button type="button" onClick={() => window.print()} className="rm-btn rm-btn-ghost h-11 min-h-0 rounded-full px-6">
-            Print this week
+            {t("printWeek", locale)}
           </button>
         }
       />
@@ -61,10 +61,10 @@ function WeeklyUpdates() {
       <DashCard className="mt-6">
         {shown.length === 0 ? (
           <DashEmpty
-            title={focus ? "Patient not on this account" : "No patients linked yet"}
-            text="A patient shows up here when their account lists this doctor or caregiver email."
+            title={focus ? t("patientMissingTitle", locale) : t("noPatientsTitle", locale)}
+            text={focus ? t("patientMissingText", locale) : t("noPatientsText", locale)}
             href="/doctor"
-            action="Back to patients"
+            action={t("backPatients", locale)}
           />
         ) : (
           <div className="divide-y divide-[#e8f3fb]">
@@ -77,10 +77,10 @@ function WeeklyUpdates() {
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row print:hidden">
         <Link href="/doctor" className="rm-btn rm-btn-ghost flex-1 rounded-full text-center">
-          All patients
+          {t("allPatients", locale)}
         </Link>
         <Link href="/pt-update" className="rm-btn rm-btn-brand flex-1 rounded-full text-center">
-          Push exercise update
+          {t("pushPlan", locale)}
         </Link>
       </div>
     </DashShell>
@@ -89,7 +89,7 @@ function WeeklyUpdates() {
 
 export default function WeeklyUpdatesPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-full items-center justify-center text-[#2f4a60]">Loading this week…</div>}>
+    <Suspense fallback={<div className="flex min-h-full items-center justify-center text-[#2f4a60]">{t("loadingWeek", loadDeviceLocale())}</div>}>
       <WeeklyUpdates />
     </Suspense>
   );

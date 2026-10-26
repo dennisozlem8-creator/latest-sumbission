@@ -94,7 +94,7 @@ export function DailyPath({
         />
         <div className="order-1 grid gap-3 sm:grid-cols-2 lg:order-2 lg:grid-cols-1">
           <StepLink
-            href="/pain-check"
+            href="/session"
             step={`2 · ${t("liveSession", locale)}`}
             title={t("stepSession", locale)}
             text={t("pathSessionText", locale)}

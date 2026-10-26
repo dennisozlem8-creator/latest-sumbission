@@ -7,7 +7,7 @@ export type LocalizedText = { en: string; es: string };
 export type PreBriefingQuestion = {
   id: string;
   text: LocalizedText;
-  type: "scale" | "choice";
+  type: "scale" | "choice" | "pain";
   options?: { value: string; label: LocalizedText }[];
 };
 
@@ -66,6 +66,11 @@ const commonQuestions: PreBriefingQuestion[] = [
     id: "confidence",
     text: { en: "Confidence in doing today's session?", es: "¿Confianza para la sesión de hoy?" },
     type: "scale",
+  },
+  {
+    id: "pain",
+    text: { en: "How is your pain today?", es: "¿Cómo está tu dolor hoy?" },
+    type: "pain",
   },
 ];
 
@@ -239,7 +244,9 @@ const injuryQuestions: Record<InjuryType, PreBriefingQuestion[]> = {
 };
 
 export function getPreBriefingQuestions(injury: InjuryType): PreBriefingQuestion[] {
-  return [...commonQuestions, ...injuryQuestions[injury]];
+  const pain = commonQuestions.filter((question) => question.type === "pain");
+  const rest = commonQuestions.filter((question) => question.type !== "pain");
+  return [...rest, ...injuryQuestions[injury], ...pain];
 }
 
 export function questionText(question: PreBriefingQuestion, locale: Locale) {
@@ -259,5 +266,6 @@ export function summarizeCheckIn(answers: CheckInAnswers, locale: Locale = "en")
   if (answers.swelling === "Noticeable") flags.push(locale === "es" ? "hinchazón" : "swelling");
   if (answers.yesterday === "No / rest day") flags.push(locale === "es" ? "ayer no entrenó" : "missed yesterday");
   if (Number(answers.confidence) <= 2) flags.push(locale === "es" ? "poca confianza" : "low confidence");
+  if (Number(answers.pain) >= 7) flags.push(locale === "es" ? "dolor alto" : "high pain");
   return flags.length ? flags.join(", ") : doingWellLabel(locale);
 }

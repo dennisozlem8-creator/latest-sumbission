@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import {
@@ -20,6 +21,7 @@ export function PreBriefingFlow() {
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<CheckInAnswers>({});
+  const [highPain, setHighPain] = useState<number | null>(null);
 
   if (!user) return null;
 
@@ -33,10 +35,13 @@ export function PreBriefingFlow() {
     const today = todayDateString();
     const summary = summarizeCheckIn(finalAnswers, locale);
 
+    const pain = Number(finalAnswers.pain);
+    const painToday = Number.isFinite(pain) ? pain : undefined;
+
     updateUser({
       lastCheckInDate: today,
       checkInAnswers: finalAnswers,
-      painToday: undefined,
+      painToday,
     });
 
     if (finalAnswers.swelling === "Noticeable" || finalAnswers.yesterday === "No / rest day") {
@@ -48,6 +53,19 @@ export function PreBriefingFlow() {
           message: `${user.name}: ${summary}. Review the weekly update before the session.`,
         });
       }
+    }
+
+    if (painToday != null && painToday >= 7) {
+      for (const email of careTeamEmails(user)) {
+        addNotification({
+          toEmail: email,
+          role: "doctor",
+          title: "High pain alert",
+          message: `${user.name} reported pain level ${painToday}/10. Session blocked.`,
+        });
+      }
+      setHighPain(painToday);
+      return;
     }
 
     router.replace("/briefing");
@@ -63,6 +81,20 @@ export function PreBriefingFlow() {
     } else {
       finish(next);
     }
+  }
+
+  if (highPain != null) {
+    return (
+      <div className="mx-auto max-w-lg">
+        <h2 className="rm-serif text-2xl font-semibold text-[#9a4f4f]">{t("highPain", locale)}</h2>
+        <p className="mt-3 text-base leading-7 text-[#1b3348]">
+          {highPain}/10. {t("restToday", locale)}
+        </p>
+        <Link href="/briefing" className="rm-btn rm-btn-brand mt-6 w-full rounded-full">
+          {t("goToBriefing", locale)}
+        </Link>
+      </div>
+    );
   }
 
   if (!current) return null;
@@ -107,6 +139,26 @@ export function PreBriefingFlow() {
             >
               {t("continue", locale)}
             </button>
+          </div>
+        )}
+
+        {current.type === "pain" && (
+          <div className="mt-6">
+            <p className="text-sm text-[#2f4a60]">{t("painScale", locale)}</p>
+            <div className="mt-4 grid grid-cols-5 gap-3">
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => submitAnswer(n)}
+                  className={`flex min-h-[4.5rem] items-center justify-center rounded-[1.15rem] bg-white text-xl font-bold shadow-[0_10px_24px_rgba(27,51,72,0.06)] ring-1 ring-[#4f90c6]/12 ${
+                    n <= 3 ? "text-[#3a7d62]" : n <= 6 ? "text-[#7a6548]" : "text-[#9a4f4f]"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

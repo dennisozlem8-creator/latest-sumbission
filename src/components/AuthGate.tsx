@@ -14,8 +14,8 @@ const ONBOARDING_EXEMPT = [ONBOARDING_PATH, "/kids"];
 /** Patient paths reachable without completing daily check-in */
 const CHECK_IN_EXEMPT = [CHECK_IN_PATH, ONBOARDING_PATH, "/kids", "/story", "/goniometer", "/heart", "/muscle", "/motion", "/report"];
 
-function patientNeedsCheckIn(lastCheckInDate?: string) {
-  return lastCheckInDate !== todayDateString();
+function patientNeedsCheckIn(user: { lastCheckInDate?: string; painToday?: number }) {
+  return user.lastCheckInDate !== todayDateString() || user.painToday == null;
 }
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
@@ -44,7 +44,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (
       user?.role === "patient" &&
       user.setupComplete &&
-      patientNeedsCheckIn(user.lastCheckInDate) &&
+      patientNeedsCheckIn(user) &&
       !CHECK_IN_EXEMPT.includes(pathname)
     ) {
       router.replace(CHECK_IN_PATH);

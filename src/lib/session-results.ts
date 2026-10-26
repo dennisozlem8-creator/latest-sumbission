@@ -9,8 +9,8 @@ export type SessionSummary = {
   reps: number;
   /** Reps counted during the range test, before the exercise list. */
   testReps?: number;
-  emg: number;
-  hr: number;
+  emg: number | null;
+  hr: number | null;
   target: number;
 };
 
