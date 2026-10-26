@@ -58,7 +58,7 @@ export default function DashboardPage() {
         text={t("dashboardText", locale)}
         action={
           <div className="flex w-full flex-col gap-2 sm:max-w-xs">
-            <Link href="/pain-check" className="rm-btn rm-btn-brand h-14 min-h-0 w-full rounded-full text-base">
+            <Link href="/session" className="rm-btn rm-btn-brand h-14 min-h-0 w-full rounded-full text-base">
               {t("startSession", locale)}
             </Link>
             <Link href="/goniometer" className="rm-btn rm-btn-ghost h-12 min-h-0 w-full rounded-full">

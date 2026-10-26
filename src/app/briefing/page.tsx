@@ -50,7 +50,7 @@ export default function BriefingPage() {
             </p>
           ) : null}
           <div className="mt-4 flex flex-col gap-2 sm:max-w-md">
-            <Link href="/pain-check" className="rm-btn rm-btn-brand h-14 w-full rounded-full text-base">
+            <Link href="/session" className="rm-btn rm-btn-brand h-14 w-full rounded-full text-base">
               {t("startSession", locale)}
             </Link>
             <Link href="/goniometer" className="rm-btn rm-btn-ghost h-12 w-full rounded-full">
