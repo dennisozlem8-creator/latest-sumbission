@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Exercise } from "@/lib/assessments";
 import { getExerciseMedia } from "@/lib/exercise-media";
-import { t } from "@/lib/i18n";
+import { t, tf } from "@/lib/i18n";
+import type { MeasuredJoint } from "@/lib/goniometer";
 import type { MeasureMethod } from "@/lib/users";
 import { createRepCounter } from "@/lib/rep-counter";
 import { useAuth } from "./AuthProvider";
@@ -15,6 +16,7 @@ import { addNotification, sendBrowserNotification } from "@/lib/notifications";
 type ExerciseProgramProps = {
   exercises: Exercise[];
   method?: MeasureMethod;
+  joint?: MeasuredJoint;
   onComplete: (completedIds: string[], reps: number) => void;
 };
 
@@ -29,7 +31,7 @@ function parseTargetReps(sets: string): number {
   return match ? Number(match[1]) : 10;
 }
 
-export function ExerciseProgram({ exercises, method = "camera", onComplete }: ExerciseProgramProps) {
+export function ExerciseProgram({ exercises, method = "camera", joint = "knee", onComplete }: ExerciseProgramProps) {
   const { user } = useAuth();
   const muscle = useMyoWare();
   const [index, setIndex] = useState(0);
@@ -44,12 +46,10 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
   const effortCounter = useRef(createRepCounter({ minTravel: 18 }));
 
   const current = exercises[index];
-  if (!current) return null;
-
-  const media = getExerciseMedia(current.id, current.name);
   const locale = user?.language ?? "en";
-  const progress = ((index + 1) / exercises.length) * 100;
-  const targetReps = parseTargetReps(current.sets);
+  const media = current ? getExerciseMedia(current.id, current.name) : null;
+  const progress = exercises.length ? ((index + 1) / exercises.length) * 100 : 0;
+  const targetReps = current ? parseTargetReps(current.sets) : 10;
 
   useEffect(() => {
     setActive(false);
@@ -61,18 +61,23 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
     effortCounter.current.reset();
   }, [index]);
 
+  const exerciseId = current?.id;
+  const exerciseName = current?.name;
+
   useEffect(() => {
-    if (!active || method !== "muscle" || !muscle.connected || muscle.emg == null) return;
+    if (!exerciseId || !exerciseName || !active || method !== "muscle" || !muscle.connected || muscle.emg == null) return;
     setSignalSeen(true);
     if (!effortCounter.current.push(muscle.emg)) return;
     setReps((count) => {
       const updated = count + 1;
-      totals.current[current.id] = updated;
-      pushAlert("success", `Rep ${updated} counted. Bend and return.`, "success");
-      if (updated === targetReps) pushAlert("done", `${current.name} complete.`, "milestone");
+      totals.current[exerciseId] = updated;
+      pushAlert("success", tf("exerciseRepCounted", locale, { n: updated }), "success");
+      if (updated === targetReps) pushAlert("done", tf("exerciseDoneName", locale, { name: exerciseName }), "milestone");
       return updated;
     });
-  }, [active, method, muscle.connected, muscle.emg, current.id, current.name, targetReps]);
+  }, [active, method, muscle.connected, muscle.emg, exerciseId, exerciseName, targetReps, locale]);
+
+  if (!current || !media) return null;
 
   function onAngle(next: number) {
     setLiveAngle(next);
@@ -82,8 +87,8 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
     setReps((count) => {
       const updated = count + 1;
       totals.current[current.id] = updated;
-      pushAlert("success", `Rep ${updated} counted. Bend and return.`, "success");
-      if (updated === targetReps) pushAlert("done", `${current.name} complete.`, "milestone");
+      pushAlert("success", tf("exerciseRepCounted", locale, { n: updated }), "success");
+      if (updated === targetReps) pushAlert("done", tf("exerciseDoneName", locale, { name: current.name }), "milestone");
       return updated;
     });
   }
@@ -93,8 +98,8 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
     setReps((count) => {
       const updated = count + 1;
       totals.current[current.id] = updated;
-      pushAlert("success", `Rep ${updated} counted.`, "success");
-      if (updated === targetReps) pushAlert("done", `${current.name} complete.`, "milestone");
+      pushAlert("success", tf("exerciseRepCounted", locale, { n: updated }), "success");
+      if (updated === targetReps) pushAlert("done", tf("exerciseDoneName", locale, { name: current.name }), "milestone");
       return updated;
     });
   }
@@ -109,7 +114,7 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
       addNotification({
         toEmail: user.email,
         role: "patient",
-        title: "Exercise milestone",
+        title: t("exerciseMilestoneTitle", locale),
         message,
       });
       sendBrowserNotification("Revive Motion", message);
@@ -118,13 +123,13 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
 
   function startExercise() {
     setActive(true);
-    pushAlert("start", `Starting ${current.name} — follow the picture and move with your sensor.`, "tip");
+    pushAlert("start", tf("exerciseStarting", locale, { name: current.name }), "tip");
   }
 
   function markDone() {
     const nextCompleted = [...completed, current.id];
     setCompleted(nextCompleted);
-    pushAlert("finish", `✓ ${current.name} logged.`, "success");
+    pushAlert("finish", tf("exerciseLogged", locale, { name: current.name }), "success");
 
     const total = Object.values(totals.current).reduce((sum, count) => sum + count, 0);
     if (index < exercises.length - 1) {
@@ -134,13 +139,10 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
         addNotification({
           toEmail: user.email,
           role: "patient",
-          title: "All exercises complete",
-          message: `You finished all ${exercises.length} exercises in this session!`,
+          title: t("exerciseAllTitle", locale),
+          message: tf("exerciseAllBody", locale, { n: exercises.length }),
         });
-        sendBrowserNotification(
-          "Revive Motion",
-          `Session complete — all ${exercises.length} exercises done!`
-        );
+        sendBrowserNotification("Revive Motion", tf("exerciseAllNote", locale, { n: exercises.length }));
       }
       onComplete(nextCompleted, total);
     }
@@ -157,9 +159,9 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
     <div className="space-y-6">
       <div>
         <div className="mb-2 flex justify-between text-sm">
-          <span className="font-semibold text-[#2f4a60]">Follow your exercises</span>
+          <span className="font-semibold text-[#2f4a60]">{t("exerciseFollow", locale)}</span>
           <span className="font-semibold tabular-nums text-[#1b3348]">
-            {index + 1} of {exercises.length}
+            {tf("exerciseCount", locale, { n: index + 1, total: exercises.length })}
           </span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-[#e8f3fb]">
@@ -189,7 +191,7 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
           <img src={media.image} alt={current.name} className="h-40 object-contain p-4" />
         </div>
         <div className="p-6">
-          <p className="text-sm font-semibold text-[#2f4a60]">Exercise {index + 1}</p>
+          <p className="text-sm font-semibold text-[#2f4a60]">{tf("exerciseLabel", locale, { n: index + 1 })}</p>
           <h2 className="rm-serif mt-1 text-2xl font-semibold text-[#1b3348]">{current.name}</h2>
           <p className="mt-3 text-base leading-7 text-[#2f4a60]">{current.description}</p>
           <p className="mt-4 rounded-[1.1rem] bg-[#e8f3fb] px-4 py-3 text-lg font-bold text-[#1b3348]">
@@ -207,23 +209,23 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
                   </p>
                 </div>
                 <div className="rm-card px-4 py-3 text-center">
-                  <p className="text-xs text-muted">Angle</p>
+                  <p className="text-xs text-muted">{t("sessionAngle", locale)}</p>
                   <p className="text-2xl font-bold text-brand-light">{liveAngle != null ? `${liveAngle}°` : "—"}</p>
                 </div>
               </div>
-              {method === "muscle" ? <MyoWarePanel compact /> : <MotionPanel compact live onAngle={onAngle} />}
+              {method === "muscle" ? <MyoWarePanel compact /> : <MotionPanel compact live joint={joint} onAngle={onAngle} />}
             </div>
           )}
 
           <ol className="mt-5 space-y-2 text-sm text-body">
-            <li>1. Get into the position in the picture</li>
-            <li>2. Bend and return once for each rep</li>
-            <li>3. Tap below when the set is finished</li>
+            <li>1. {t("exerciseStep1", locale)}</li>
+            <li>2. {t("exerciseStep2", locale)}</li>
+            <li>3. {t("exerciseStep3", locale)}</li>
           </ol>
 
           {!active ? (
             <button type="button" onClick={startExercise} className="rm-btn rm-btn-brand mt-8 w-full">
-              Start exercise with sensor
+              {t("exerciseStart", locale)}
             </button>
           ) : (
             <div className="mt-8 space-y-3">
@@ -233,7 +235,7 @@ export function ExerciseProgram({ exercises, method = "camera", onComplete }: Ex
                 </button>
               ) : null}
               <button type="button" onClick={markDone} className="rm-btn rm-btn-primary w-full">
-                {index < exercises.length - 1 ? "Done — next exercise" : "Finish all exercises"}
+                {index < exercises.length - 1 ? t("exerciseNext", locale) : t("exerciseFinish", locale)}
               </button>
             </div>
           )}

@@ -49,7 +49,7 @@ export default function Home() {
   const streak = calculateStreak(user);
   const patients = careTeam ? getPatientsForDoctor() : [];
   const caseloadClips = patients.reduce((sum, patient) => sum + loadMeasurements(patient.email).length, 0);
-  const attention = patients.filter((patient) => doctorWatchLevel(loadMeasurements(patient.email)).level !== "on-track").length;
+  const attention = patients.filter((patient) => doctorWatchLevel(loadMeasurements(patient.email), locale).level !== "on-track").length;
 
   return (
     <DashShell caregiver={careTeam}>
@@ -78,7 +78,7 @@ export default function Home() {
             <div className="mt-5 flex flex-col gap-2 sm:max-w-md">
               {isPatient && (
                 <>
-                  <Link href="/pain-check" className="rm-btn rm-btn-brand inline-flex h-14 min-h-0 w-full rounded-full text-base">
+                  <Link href="/session" className="rm-btn rm-btn-brand inline-flex h-14 min-h-0 w-full rounded-full text-base">
                     {t("startSession", locale)}
                   </Link>
                   <Link href="/goniometer" className="rm-btn rm-btn-ghost inline-flex h-12 min-h-0 w-full rounded-full">
@@ -93,10 +93,10 @@ export default function Home() {
               {careTeam && (
                 <>
                   <Link href="/doctor/weekly" className="rm-btn rm-btn-brand inline-flex h-12 min-h-0 w-full rounded-full">
-                    This week’s patient updates
+                    {t("homeWeekUpdates", locale)}
                   </Link>
                   <Link href="/doctor" className="rm-btn rm-btn-ghost inline-flex h-12 min-h-0 w-full rounded-full">
-                    Open care dashboard
+                    {t("openCareDash", locale)}
                   </Link>
                 </>
               )}
@@ -151,7 +151,7 @@ export default function Home() {
           <div className="divide-y divide-[#e8f3fb]">
             {patients.slice(0, 4).map((patient) => {
               const rows = loadMeasurements(patient.email);
-              const watch = doctorWatchLevel(rows);
+              const watch = doctorWatchLevel(rows, locale);
               const snap = progressSnapshot(rows, patient.targetRom || 100);
               return (
                 <Link

@@ -86,14 +86,18 @@ export function SessionReport({
               ) : null}
             </dd>
           </div>
-          <div>
-            <dt className="text-sm font-semibold text-[#2f4a60]">EMG effort</dt>
-            <dd className="rm-serif text-2xl font-semibold tabular-nums text-[#1b3348]">{summary.emg}%</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-semibold text-[#2f4a60]">Heart rate</dt>
-            <dd className="rm-serif text-2xl font-semibold tabular-nums text-[#1b3348]">{summary.hr} BPM</dd>
-          </div>
+          {summary.emg != null ? (
+            <div>
+              <dt className="text-sm font-semibold text-[#2f4a60]">EMG effort</dt>
+              <dd className="rm-serif text-2xl font-semibold tabular-nums text-[#1b3348]">{summary.emg}%</dd>
+            </div>
+          ) : null}
+          {summary.hr != null ? (
+            <div>
+              <dt className="text-sm font-semibold text-[#2f4a60]">Heart rate</dt>
+              <dd className="rm-serif text-2xl font-semibold tabular-nums text-[#1b3348]">{summary.hr} BPM</dd>
+            </div>
+          ) : null}
           <div>
             <dt className="text-sm font-semibold text-[#2f4a60]">Pain today</dt>
             <dd className="rm-serif text-2xl font-semibold tabular-nums text-[#1b3348]">{user.painToday ?? "—"}/10</dd>

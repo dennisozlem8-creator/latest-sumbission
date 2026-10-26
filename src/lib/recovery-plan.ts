@@ -260,34 +260,37 @@ export function nextSessionActions(
   return actions.slice(0, 5);
 }
 
-export function doctorWatchLevel(rows: GoniometerMeasurement[]) {
-  const progress = progressSnapshot(rows, 120);
+export function doctorWatchLevel(rows: GoniometerMeasurement[], locale: Locale = "en") {
+  const progress = progressSnapshot(rows, 120, locale);
+  const es = locale === "es";
   const latest = rows.slice().sort((a, b) => a.date.localeCompare(b.date)).at(-1);
   const flags = latest?.flags ?? [];
   if (flags.includes("wobble") || flags.includes("jerky") || (latest?.formScore ?? 100) < 45) {
     return {
       level: "attention" as const,
-      label: "Needs attention",
-      detail: latest?.nextAction || "Latest clip had form problems. Review the video notes.",
+      label: es ? "Hay que revisar" : "Needs attention",
+      detail: latest?.nextAction || (es ? "La última lectura tuvo problemas de forma." : "Latest clip had form problems. Review the video notes."),
     };
   }
   if (progress.daysSinceLast != null && progress.daysSinceLast >= 4) {
     return {
       level: "attention" as const,
-      label: "Needs attention",
-      detail: `No movement clip in ${progress.daysSinceLast} days.`,
+      label: es ? "Hay que revisar" : "Needs attention",
+      detail: es
+        ? `Sin lectura de movimiento en ${progress.daysSinceLast} días.`
+        : `No movement clip in ${progress.daysSinceLast} days.`,
     };
   }
   if (progress.onTrack) {
     return {
       level: "on-track" as const,
-      label: "On track",
+      label: es ? "En curso" : "On track",
       detail: progress.headline,
     };
   }
   return {
     level: "watch" as const,
-    label: "Watch",
+    label: es ? "Vigilar" : "Watch",
     detail: progress.headline,
   };
 }

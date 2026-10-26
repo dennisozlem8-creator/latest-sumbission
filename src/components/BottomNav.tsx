@@ -44,7 +44,7 @@ function primaryAction(pathname: string, care: boolean, locale: Locale) {
     if (matches(pathname, "/session")) {
       return { href: "/goniometer", label: t("navMeasure", locale) };
     }
-    return { href: "/pain-check", label: t("startSession", locale) };
+    return { href: "/session", label: t("startSession", locale) };
   }
   if (matches(pathname, "/doctor/weekly")) {
     return { href: "/pt-update", label: t("navUpdate", locale) };
